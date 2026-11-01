@@ -27,9 +27,11 @@ Existing account readiness is different from end-to-end acceptance in this new a
 
 ## Next, in order
 
-### 1. Owner: Sentry account and project
+### 1. Owner: Sentry account and monitoring project
 
-- [ ] Create the Sentry account/organization and one **Node.js** project for the existing controlled demo app.
+The Node.js demo application already exists. A **Sentry project** is its error-monitoring container inside Sentry's dashboard, not another Node app or Git repository. Choose Node.js as that monitoring project's platform because the existing demo backend runs on Node; the existing source already includes the Sentry SDK.
+
+- [ ] Create the Sentry account/organization, then add one **monitoring project inside Sentry** for the existing demo app, selecting the Node.js platform. Do not scaffold another Node app, repository or deployment.
 - [ ] Get its DSN and privately set `SENTRY_DSN` in the **existing demo site's** Vercel Production settings; redeploy that demo through the owner's normal workflow.
 - [ ] Record the demo project's numeric ID and organization slug privately.
 - [ ] Create an internal integration for the eventual signed Issue Alert delivery and API access. Enable its Alert Rule Action. The existing implementation expects a webhook Client Secret and an organization token with the issue-write permission used to resolve the incident.
