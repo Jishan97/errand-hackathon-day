@@ -339,7 +339,7 @@ test('prepared recording PR verification is read-only and checks current draft a
  const f=fixture({overrides:valid});
  assert.equal((await f.api.verifyPreparedPullRequest(args)).pullRequest,args.pullRequest);
  assert.deepEqual(f.writes(),[]);
- for(const current of [{...pull(),draft:true,state:'closed'},{...pull(),draft:false},{...pull(),draft:true,head:{...pull().head,sha:mergeSha}}]){
+ for(const current of [{...pull(),draft:true,state:'closed',merged:true},{...pull(),draft:false},{...pull(),draft:true,head:{...pull().head,sha:mergeSha}}]){
   const bad=fixture({overrides:{"GET /pulls/7":()=>current}});
   await assert.rejects(bad.api.verifyPreparedPullRequest(args),/incident_pr_changed/);
   assert.deepEqual(bad.writes(),[]);
@@ -347,4 +347,19 @@ test('prepared recording PR verification is read-only and checks current draft a
  const bad=fixture({overrides:{...valid,[`GET /contents/${files[0].path}?ref=${headSha}`]:()=>({encoding:'base64',content:Buffer.from('changed').toString('base64')})}});
  await assert.rejects(bad.api.verifyPreparedPullRequest(args),/incident_patch_changed/);
  assert.deepEqual(bad.writes(),[]);
+});
+
+
+test('only unchanged closed-unmerged PRs qualify for replacement; modified and merged PRs do not',async()=>{
+ const args={...descriptor(),files};
+ const closed={"GET /pulls/7":()=>({...pull(),state:'closed',draft:false,merged:false})};
+ const f=fixture({overrides:closed});
+ assert.equal((await f.api.verifyPreparedPullRequest(args)).status,'closed');assert.deepEqual(f.writes(),[]);
+ const changed=fixture({overrides:{...closed,[`GET /contents/${files[0].path}?ref=${headSha}`]:()=>({encoding:'base64',content:Buffer.from('changed').toString('base64')})}});
+ await assert.rejects(changed.api.verifyPreparedPullRequest(args),/incident_patch_changed/);
+ const merged=fixture({overrides:{"GET /pulls/7":()=>({...pull(),state:'closed',draft:false,merged:true})}});
+ await assert.rejects(merged.api.verifyPreparedPullRequest(args),/incident_pr_changed/);
+ const created=fixture({overrides:{"POST /pulls":()=>({...pull(),draft:true})}});
+ assert.equal((await created.api.createPullRequest({taskId,baseSha,files,prepared:true})).pullRequest,args.pullRequest);
+ const body=JSON.parse(created.requests.find(r=>r.init.method==='POST' && r.url.endsWith('/pulls')).init.body);assert.equal(body.draft,true);
 });

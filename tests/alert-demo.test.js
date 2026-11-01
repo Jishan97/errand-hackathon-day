@@ -15,18 +15,19 @@ test('prepared patch binds all reviewed source bytes and returns only parser/tes
     assert.throws(() => preparedRepair(changed), /prepared_source_changed/);
   }
 });
-function fixture({failure, reuse=false} = {}) {
+function fixture({failure, reuse=false, closed=false} = {}) {
   let claimed = false;
   const calls = [];
   const rpc = async (name, params) => {
     calls.push([name, params]);
     if (name.endsWith('claim')) { if (claimed) return {status:'not_claimed'}; claimed=true; return {status:'claimed',baseSha,approvalId:'11111111-1111-4111-8111-111111111111', ...(reuse?{reusePr:url,prHead:'d'.repeat(40)}:{})}; }
+    if(name.endsWith('replace_pr') && failure==='storage') throw Error('fast_storage_request_unconfirmed');
     return {status:'recorded'};
   };
   const github = { snapshot: async () => snapshot, createPullRequest: async input => {
-    calls.push(['pr',input]); if(failure==='pr') throw Error('private provider text'); return {pullRequest:url};
+    calls.push(['pr',input]); if(failure==='pr') throw Error('private provider text'); return {pullRequest:closed?url+'4':url,headSha:'e'.repeat(40)};
   } };
-  github.verifyPreparedPullRequest=async input=>{calls.push(['verify-pr',input]); if(failure==='verify') throw Error('changed PR'); return {pullRequest:url};};
+  github.verifyPreparedPullRequest=async input=>{calls.push(['verify-pr',input]); if(failure==='verify') throw Error('incident_pr_changed'); return {pullRequest:url,status:closed?'closed':'open'};};
   const caller = {call: async evidence => {calls.push(['call',evidence]); if(failure==='call') throw Error('private provider text'); return {status:'submitted_not_verified'};}};
   return {demo:createAlertDemo({rpc,github,caller}),calls,github};
 }
@@ -98,4 +99,34 @@ test('recording take verifies the existing PR and calls once without creating an
  const changed=fixture({reuse:true,failure:'verify'});
  assert.equal((await changed.demo.run(receipt)).status,'failed');
  assert.equal(changed.calls.some(c=>['pr','call'].includes(c[0])),false);
+});
+
+
+test('closed unmerged prepared PR is replaced and persisted before one call',async()=>{
+ const f=fixture({reuse:true,closed:true});
+ const result=await f.demo.run(receipt);
+ assert.equal(result.status,'completed'); assert.equal(result.pullRequest,url+'4');
+ assert.deepEqual(f.calls.map(c=>c[0]),['errand_alert_claim','verify-pr','pr','errand_alert_replace_pr','errand_alert_record','call','errand_alert_record']);
+ assert.equal(f.calls.find(c=>c[0]==='errand_alert_replace_pr')[1].p_previous_pr,url);
+ assert.equal(f.calls.find(c=>c[0]==='call')[1].pullRequest,url+'4');
+ await f.demo.run(receipt); assert.equal(f.calls.filter(c=>c[0]==='pr').length,1);
+});
+test('unconfirmed replacement write blocks the call and never repeats the PR write',async()=>{
+ for(const failure of ['pr','storage']){
+  const f=fixture({reuse:true,closed:true,failure});
+  assert.equal((await f.demo.run(receipt)).status,'unknown');
+  assert.equal(f.calls.some(c=>c[0]==='call'),false);
+  assert.equal(f.calls.at(-1)[0],'errand_alert_fail');
+  assert.equal(f.calls.at(-1)[1].p_uncertain,true);
+  assert.doesNotMatch(JSON.stringify(f.calls),/private provider text/);
+  await f.demo.run(receipt);assert.equal(f.calls.filter(c=>c[0]==='pr').length,1);
+ }
+});
+test('failed preparation retains a fixed actionable reason, never raw provider output',async()=>{
+ const f=fixture({reuse:true,failure:'verify'});
+ assert.deepEqual(await f.demo.run(receipt),{status:'failed',failureReason:'pr_changed'});
+ const demo=createAlertDemo({rpc:async()=>({status:'found',phase:'failed',failureReason:'pr_changed',private:'never show'})});
+ assert.deepEqual(await demo.status(),{status:'found',phase:'failed',failureReason:'pr_changed'});
+ const unknown=createAlertDemo({rpc:async()=>({status:'found',phase:'failed',failureReason:'private provider text'})});
+ assert.equal((await unknown.status()).failureReason,undefined);
 });

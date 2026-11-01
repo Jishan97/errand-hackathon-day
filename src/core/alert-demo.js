@@ -4,6 +4,16 @@ import prepared from '../assistant/prepared-upload-fix.js';
 export const ALERT_SCOPE = 'upload-error-prepared-pr-and-call';
 const receipt = /^[a-f0-9]{32}$/;
 const sha = /^[a-f0-9]{40}$/;
+const failureReasons = new Set(['source_changed','pr_changed','github_unavailable','call_unconfirmed','storage_unconfirmed','preparation_failed']);
+function failureReason(error) {
+  const code = error?.message;
+  if (['prepared_source_changed','incident_base_changed','incident_ci_definition_changed'].includes(code)) return 'source_changed';
+  if (['incident_pr_changed','incident_patch_changed','incident_pr_unconfirmed'].includes(code)) return 'pr_changed';
+  if (typeof code === 'string' && (code.startsWith('github_') || code.startsWith('incident_github_'))) return 'github_unavailable';
+  if (typeof code === 'string' && code.startsWith('callback_')) return 'call_unconfirmed';
+  if (typeof code === 'string' && (code.startsWith('fast_storage_') || code.startsWith('alert_storage_'))) return 'storage_unconfirmed';
+  return 'preparation_failed';
+}
 const prUrl = /^https:\/\/github\.com\/Jishan97\/errand-agent-demo\/pull\/[1-9]\d*$/;
 
 export function preparedRepair(snapshot) {
@@ -51,6 +61,7 @@ export function createAlertDemo({ rpc, github, caller }) {
       if (prUrl.test(result.pullRequest ?? '')) safe.pullRequest = result.pullRequest;
       if (result.callbackStatus === 'submitted_not_verified') safe.callbackStatus = result.callbackStatus;
       if (sha.test(result.baseSha ?? '')) safe.baseSha = result.baseSha;
+      if (failureReasons.has(result.failureReason)) safe.failureReason = result.failureReason;
       return safe;
     },
     async run(id) {
@@ -64,6 +75,17 @@ export function createAlertDemo({ rpc, github, caller }) {
         const files = preparedRepair(await github.snapshot(job.baseSha));
         if (job.reusePr) {
           pr = await github.verifyPreparedPullRequest({ pullRequest: job.reusePr, headSha: job.prHead, baseSha: job.baseSha, files });
+          if (!['open','closed'].includes(pr?.status)) throw Error('incident_pr_unconfirmed');
+          if (pr.status === 'closed') {
+            // Only a verified, unmerged closed PR can be replaced. The worker's
+            // one-time claim makes a duplicate Sentry delivery a no-op.
+            phase = 'opening_pr';
+            const replacement = await github.createPullRequest({ taskId: job.approvalId, baseSha: job.baseSha, files, prepared: true });
+            if (!prUrl.test(replacement?.pullRequest ?? '') || !sha.test(replacement?.headSha ?? '')) throw Error('incident_pr_unconfirmed');
+            const saved = await call('replace_pr', {p_receipt:id, p_previous_pr:job.reusePr, p_previous_head:job.prHead, p_pr:replacement.pullRequest, p_head:replacement.headSha});
+            if (saved.status !== 'recorded') throw Error('alert_storage_unconfirmed');
+            pr = replacement;
+          }
         } else {
           phase = 'opening_pr';
           pr = await github.createPullRequest({ taskId: job.approvalId, baseSha: job.baseSha, files, prepared: true });
@@ -75,10 +97,13 @@ export function createAlertDemo({ rpc, github, caller }) {
         if (result.status !== 'submitted_not_verified') throw Error('callback_submission_unconfirmed');
         await record('completed', pr.pullRequest);
         return { status: 'completed', pullRequest: pr.pullRequest, callbackStatus: result.status };
-      } catch {
-        // No retries after a provider write: a lost response may hide success.
-        await record(phase === 'preparing' ? 'failed' : 'unknown', prUrl.test(pr?.pullRequest ?? '') ? pr.pullRequest : null);
-        return { status: phase === 'preparing' ? 'failed' : 'unknown' };
+      } catch (error) {
+        // Store only a fixed reason; provider bodies and secrets never enter status.
+        // A lost response after a provider write still requires reconciliation.
+        const uncertain = phase !== 'preparing';
+        const reason = failureReason(error);
+        await call('fail', {p_receipt:id, p_uncertain:uncertain, p_reason:reason});
+        return { status: uncertain ? 'unknown' : 'failed', failureReason:reason };
       }
     },
   });

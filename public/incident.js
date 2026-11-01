@@ -1,10 +1,10 @@
 const el = (id) => document.getElementById(id);
 let prepared = null, receiptId = null, timer = null;
-const labels = { waiting: 'Ready for one Sentry alert', queued: 'Alert received', opening_pr: 'Opening the prepared draft PR', calling: 'Calling about the error and draft PR', repair_start: 'Starting the approved coding run', repair_poll: 'Reproducing and fixing the bug',
+const labels = { waiting: 'Ready for one Sentry alert', queued: 'Alert received', opening_pr: 'Checking or opening the prepared draft PR', calling: 'Calling about the error and draft PR', repair_start: 'Starting the approved coding run', repair_poll: 'Reproducing and fixing the bug',
   cleanup: 'Verifying coding evidence', create_pr: 'Opening the repair PR', ci_wait: 'Waiting for GitHub checks',
   merge: 'Merging the checked revision', deployment_wait: 'Waiting for the live commit and upload replay',
-  callback: 'Submitting your completion call', completed: 'Draft PR opened · error call submitted',
-  failed: 'Stopped: repair completion is not verified', unknown: 'Stopped: an external action is unconfirmed; do not retry it' };
+  callback: 'Submitting your completion call', completed: 'Draft PR ready · error call submitted',
+  failed: 'Stopped before calling', unknown: 'Stopped: an external action is unconfirmed; do not retry it' };
 async function api(action, body) {
   const token = el('operator').value;
   if (!/^[A-Za-z0-9_-]{32,128}$/.test(token)) throw Error('Enter the existing operator token privately.');
@@ -56,7 +56,8 @@ async function refresh() {
   const data = await api('alert-status');
   if (data.status !== 'found') { el('status').textContent = 'Waiting for an approved Sentry alert.'; return; }
   receiptId = data.receiptId;
-  el('status').textContent = labels[data.phase] ?? data.phase;
+  const reasons = {source_changed:'The demo code changed; review its revision before another run.', pr_changed:'The pull request was merged, changed or is no longer a draft; review it before another run.', github_unavailable:'GitHub could not confirm access or the PR. No call was submitted.', call_unconfirmed:'Call submission is uncertain. Check your phone before retrying.', storage_unconfirmed:'The saved result could not be confirmed. Review the latest run before retrying.', preparation_failed:'Preparation stopped before the call; review the demo setup.'};
+  el('status').textContent = [labels[data.phase] ?? data.phase, reasons[data.failureReason]].filter(Boolean).join(' — ');
   el('details').textContent = JSON.stringify(data, null, 2);
   el('resume').disabled = true;
   if (['completed', 'failed', 'unknown'].includes(data.phase) && timer) { clearInterval(timer); timer = null; }
