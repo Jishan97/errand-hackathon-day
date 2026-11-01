@@ -1,5 +1,7 @@
 # Minimal web deployment
 
+The Gmail worktree adds a static `/connections.html` screen and optional Node connection handlers. `npm run check` now also runs credential-free tests. Vercel's `public/` output remains static: the teammate must mount the authenticated handlers in the shared backend before OAuth works. Do not treat a page deployment as a Gmail integration deployment. See [Gmail setup](GMAIL_INTEGRATION.md) for the required public HTTPS verifier, constructor settings and live acceptance steps. No private settings are loaded by this preview.
+
 The immediate goal is a working public page and a repeatable Git-to-Vercel pipeline. Bring MVP capabilities across one at a time after this foundation works. Keep existing demos and their connections in MVP.
 
 ## Source and target

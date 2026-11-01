@@ -1,5 +1,9 @@
 # Two-demo delivery plan
 
+## Everyday contribution update — 1 November 2026
+
+Owner selected Composio-managed Gmail linking and phone-based email help. This worktree implements the connections UI and bounded Gmail integration, with other connector cards disabled. Shared identity, Agents API, storage, approvals, jobs and callbacks remain the teammate's responsibility. See [Gmail integration handoff and live acceptance checklist](GMAIL_INTEGRATION.md). The code is offline-tested; no end-to-end Gmail/phone completion is claimed. This refines the earlier open everyday scenario below without changing the primary developer demo.
+
 ## Immediate next step — 1 November 2026
 
 Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live. The owner clarified that Sentry has not been created; existing GitHub/OpenAI/voice setup should be reused, with actual new-app wiring and acceptance still pending.

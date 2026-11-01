@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Connect Gmail once. Get help with your email through a familiar phone call.">
+  <meta name="referrer" content="no-referrer"><meta name="theme-color" content="#183e34">
+  <title>Your connections · Errand</title>
+  <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/connections.css">
+  <script type="module" src="/connections.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="page connections-page">
+    <header class="header">
+      <a class="wordmark" href="/" aria-label="Errand home"><span class="mark" aria-hidden="true">e</span>errand<span class="wordmark-dot">.</span></a>
+      <span class="build-label"><span class="dot" aria-hidden="true"></span>Gmail demo</span>
+    </header>
+    <main id="main">
+      <section class="connections-intro" aria-labelledby="title">
+        <div><p class="eyebrow">YOUR APPS. A PHONE CALL AWAY.</p>
+          <h1 id="title">Connect once.<br>Then just call.</h1>
+          <p class="intro">A little help with the email that matters. Connect your Gmail here, then ask Errand by phone. No app to download.</p>
+        </div>
+        <aside class="call-example" aria-label="Example request">
+          <span class="example-label">THE EXPERIENCE WE’RE BUILDING</span>
+          <blockquote>“Find the email about my repair. Help me write back.”</blockquote>
+          <p>Read it together. Agree the words. Send only when you say yes.</p>
+        </aside>
+      </section>
+      <section aria-labelledby="apps-title">
+        <div class="section-heading"><h2 id="apps-title">Your connections</h2><span class="planned">Gmail selected for this demo</span></div>
+        <article class="gmail-card" aria-labelledby="gmail-title">
+          <div class="gmail-details"><div class="app-icon gmail-icon" aria-hidden="true">M</div>
+            <div><div class="app-heading"><h3 id="gmail-title">Gmail</h3><span id="gmail-state" class="state">Checking connection</span></div>
+              <p>Find and read emails. Prepare a message, save a draft, or send it with your approval.</p>
+              <p id="account" class="account" hidden></p>
+              <div class="capabilities" aria-label="Gmail capabilities"><span>Read</span><span>Draft</span><span>Send with approval</span></div>
+            </div>
+          </div>
+          <div class="connection-actions"><button id="connect" class="button" disabled>Connect Gmail <span aria-hidden="true">↗</span></button>
+            <span class="consent-note">Google sign-in opens in this tab.</span></div>
+        </article>
+        <div class="connection-notice" role="status" aria-live="polite" aria-atomic="true"><p id="status-message">Checking whether Gmail setup is available…</p><button id="retry" class="text-button" hidden>Check again</button></div>
+        <noscript><p>Turn on JavaScript to check and connect Gmail. The other apps are not enabled in this demo.</p></noscript>
+        <div class="other-heading"><h3>A few more possibilities</h3><p>Visible here for a look ahead. These connections are not enabled in this demo.</p></div>
+        <div class="connector-grid">
+          <article class="connector-card"><span class="app-icon calendar-icon" aria-hidden="true">31</span><h4>Google Calendar</h4><p>Appointments and plans.</p><button disabled>Not in this demo</button></article>
+          <article class="connector-card"><span class="app-icon outlook-icon" aria-hidden="true">O</span><h4>Outlook</h4><p>Another place for your email.</p><button disabled>Not in this demo</button></article>
+          <article class="connector-card"><span class="app-icon drive-icon" aria-hidden="true">△</span><h4>Google Drive</h4><p>Documents you want a hand with.</p><button disabled>Not in this demo</button></article>
+          <article class="connector-card"><span class="app-icon notion-icon" aria-hidden="true">N</span><h4>Notion</h4><p>Notes worth keeping together.</p><button disabled>Not in this demo</button></article>
+          <article class="connector-card"><span class="app-icon whatsapp-icon" aria-hidden="true">W</span><h4>WhatsApp</h4><p>Keep up with conversations.</p><button disabled>Not in this demo</button></article>
+          <article class="connector-card"><span class="app-icon telegram-icon" aria-hidden="true">↗</span><h4>Telegram</h4><p>Messages in one familiar place.</p><button disabled>Not in this demo</button></article>
+        </div>
+      </section>
+      <section class="setup-guide" aria-labelledby="setup-title"><h2 id="setup-title">A small setup. A familiar way to ask.</h2>
+        <ol><li><span>01</span><div><h3>Connect your own Gmail</h3><p>Sign in with Google and review the permissions. Someone you trust can help with setup while you give consent.</p></div></li>
+          <li><span>02</span><div><h3>Ask by phone</h3><p>Once setup is complete, use Errand’s phone number. Tell it what you need in your own words.</p></div></li>
+          <li><span>03</span><div><h3>You have the last word</h3><p>Hear the recipient and exact message before approving a send. Change your mind? Review the new version first.</p></div></li></ol>
+      </section>
+      <p class="privacy-note">Google handles your sign-in. Composio manages the connection. Email you ask about is processed by Composio and Errand’s AI and voice services. Errand does not ask for your Gmail password. You can remove access in your <a href="https://myaccount.google.com/connections" target="_blank" rel="noopener noreferrer">Google Account connections</a>.</p>
+    </main>
+    <footer><span>Errand · A little help, one call away.</span><a href="/">Back to Errand <span aria-hidden="true">↗</span></a></footer>
+  </div>
+</body>
+</html>

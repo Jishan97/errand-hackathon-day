@@ -1,5 +1,7 @@
 # Existing service adapters — planned
 
+The `gmail/` module now implements a bounded Composio-managed Gmail adapter, with injectable shared-core dependencies and credential-free tests. Start with [the handoff](../../docs/GMAIL_INTEGRATION.md); it documents the entry point, durable-store/approval contracts and remaining live verification. The default app does not instantiate provider clients. Other adapters below remain planned.
+
 Add small reviewed adapters only when their implementation slice needs them. Do not recreate existing accounts, credentials, GitHub App or the controlled demo repository.
 
 | Service | Intended role |

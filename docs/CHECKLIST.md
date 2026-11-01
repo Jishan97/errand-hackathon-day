@@ -93,3 +93,11 @@ The full developer chain is the largest remaining delivery risk. A captured even
 - [ ] Confirm the organisers' submission rules. Reserve the final hour before the 17:00 London deadline for rehearsal, recording, checks and submission; aim to submit by 16:45.
 
 The next implementation slice is not authorized by a checked planning item alone. Keep changes small, reviewable and tied to an actual acceptance boundary.
+
+## Gmail contribution in the isolated worktree — 1 November 2026
+
+- Implemented: connections page with Gmail enabled in scope and Calendar, Outlook, Drive, Notion, WhatsApp and Telegram visibly disabled.
+- Implemented: Composio managed-auth REST adapter, verified account binding, bounded Gmail read/prepare, approved draft/send, receipt readback and uncertain-send reconciliation.
+- Offline checks: `npm run check`; tests use fictional fixtures, not live accounts.
+- Pending with shared-core owner: authenticated web/caller identity, durable store and atomic approval claim, HTTPS backend/verifier deployment, Agents API tool wiring, real consent/mailbox/phone acceptance.
+- Contract and rehearsal: [Gmail integration handoff](GMAIL_INTEGRATION.md). Existing checklist above describes the main-branch baseline.

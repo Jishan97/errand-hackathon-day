@@ -6,6 +6,14 @@ Built for the [DevDay Exchange London Community Hackathon](https://luma.com/dde-
 
 Production URL: [Errand on Vercel](https://errand-hackathon-day.vercel.app).
 
+## This worktree: Gmail by phone
+
+Teammate: start with [Composio + Gmail setup](docs/COMPOSIO_GMAIL_SETUP.md), including the Agents API execution boundary and first live acceptance test.
+
+The everyday contribution now includes a [connections screen](public/connections.html) and a [Composio Gmail adapter and shared-core handoff](docs/GMAIL_INTEGRATION.md). Gmail alone is enabled for the demo; Calendar, Outlook, Drive, Notion, WhatsApp and Telegram remain disabled preview cards. Connect once in a browser, then use the phone service once the teammate's shared core is connected.
+
+Run `npm run check` and `npm start`, then open `/connections.html`. The default credential-free preview reports setup pending. The adapter supports verified account linking, search/read, approved draft creation/send and readback, but requires injected authentication, durable storage and approvals. Live OAuth, delivery and phone callbacks have **not** been verified. Production remains static until a backend is wired. The older scaffold roadmap below remains context; this worktree's precise scope is in the handoff.
+
 ## What we are building
 
 One assistant, two demonstrations, sharing conversation, scoped approvals, saved tasks, background work and callbacks.

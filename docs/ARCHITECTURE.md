@@ -1,5 +1,7 @@
 # One shared assistant, two scenarios
 
+This worktree adds `public/connections.*` and `src/integrations/gmail/`: a Composio managed-auth adapter, authenticated connection handlers, and bounded Gmail capability. `createApp(options)` can mount it when the shared core injects dependencies; no-argument preview still connects no services. There is no production in-memory store or duplicate phone/agent core. See [Gmail contracts](GMAIL_INTEGRATION.md) for the required atomic approval/storage boundary and backend deployment gap. The original foundation description below remains the production baseline.
+
 This diagram is the target architecture. The implemented foundation is a small static web page and local server; module directories currently contain briefs. Vercel publishes `public/` after the build check. No backend service runs in production yet.
 
 ```mermaid
