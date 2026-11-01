@@ -4,7 +4,7 @@ Errand is a phone-based assistant that carries out approved work between calls a
 
 Built for the [DevDay Exchange London Community Hackathon](https://luma.com/dde-ldn-hack) on Sunday, 1 November 2026.
 
-Production URL: [Errand on Vercel](https://errand-hackathon-day-jishan97s-projects.vercel.app).
+Production URL: [Errand on Vercel](https://errand-hackathon-day.vercel.app).
 
 ## What we are building
 
