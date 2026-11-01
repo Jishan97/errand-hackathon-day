@@ -31,6 +31,15 @@ Existing account readiness is different from end-to-end acceptance in this new a
 
 The Node.js demo application already exists. A **Sentry project** is its error-monitoring container inside Sentry's dashboard, not another Node app or Git repository. Choose Node.js as that monitoring project's platform because the existing demo backend runs on Node; the existing source already includes the Sentry SDK.
 
+For this demonstration, one monitoring project for the **existing demo app** is enough:
+
+| Application | Role in the Sentry flow | Setup needed |
+| --- | --- | --- |
+| Existing demo under `mvp/demos/developer/` | Reports the planted error to Sentry. | Existing Sentry SDK plus the demo project's `SENTRY_DSN`. |
+| Main app in `hackathon-day/` | Receives signed Sentry alerts and coordinates the approved Errand response. | A backend webhook receiver, verification secret, project/org binding and scoped API token. It does not need its own monitoring DSN/SDK for this role. |
+
+Monitoring errors inside Errand itself is optional later work and can use a separate Sentry monitoring project. It is not required to demonstrate the controlled target's failure. The main app is currently static; its receiver still needs to be brought across and verified before activating the alert.
+
 - [ ] Create the Sentry account/organization, then add one **monitoring project inside Sentry** for the existing demo app, selecting the Node.js platform. Do not scaffold another Node app, repository or deployment.
 - [ ] Get its DSN and privately set `SENTRY_DSN` in the **existing demo site's** Vercel Production settings; redeploy that demo through the owner's normal workflow.
 - [ ] Record the demo project's numeric ID and organization slug privately.
