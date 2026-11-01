@@ -1,10 +1,12 @@
 # One shared assistant, two scenarios
 
-This worktree adds `public/connections.*` and `src/integrations/gmail/`: a Composio managed-auth adapter, authenticated connection handlers, and bounded Gmail capability. `createApp(options)` can mount it when the shared core injects dependencies; no-argument preview still connects no services. There is no production in-memory store or duplicate phone/agent core. See [Gmail contracts](GMAIL_INTEGRATION.md) for the required atomic approval/storage boundary and backend deployment gap. The original foundation description below remains the production baseline.
+> **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
+
+This branch merges main `38bbe72` and adds a runnable single-user Gmail operator lane: `public/gmail.*`, `src/core/gmail-*`, `src/storage/gmail-store.js`, `db/gmail.sql`, and Web Request API entry points around the existing Composio capability. It reuses main's operator token, Supabase project, Vercel pattern and shared HTTP shell, with separate Gmail tables and no dependency on the incident runtime. Default local preview connects no services. See [operator activation](GMAIL_OPERATOR.md) and [Gmail contracts](GMAIL_INTEGRATION.md). The older foundation descriptions below are historical.
 
 Image email follows the same worker: core image generation → private task-owned asset → injected `resolveImageAsset` → immutable Gmail proposal with image description/byte digest → explicit approval → multipart send/draft → Gmail attachment readback. The module does not generate images or download arbitrary URLs; the core owns generation, image sanitation and asset storage.
 
-This diagram is the target architecture. The implemented foundation is a small static web page and local server; module directories currently contain briefs. Vercel publishes `public/` after the build check. No backend service runs in production yet.
+This diagram is the target architecture. The incident runtime and Gmail adapter coexist; general phone/caller admission remains a separate integration boundary.
 
 ```mermaid
 flowchart LR
@@ -24,10 +26,12 @@ flowchart LR
 | Location | Responsibility | Present now |
 | --- | --- | --- |
 | `public/`, `vercel.json` | Minimal public web page and Git-driven deployment | Static HTML/CSS and honest static health JSON |
-| `src/app.js`, `src/server.js` | Local preview of the same allowlisted public files | Web page, stylesheet, health and 404/405 responses |
+| `public/gmail.*`, `src/core/gmail-*`, `api/gmail/*`, `api/connections/gmail/*`, `db/gmail.sql` | Single-user Gmail operator, OAuth session, approval and worker | Implemented and offline-tested; owner activation/live acceptance pending |
+| `src/app.js`, `src/server.js` | Local preview and shared webhook adapter | Public files, health, webhook method/authentication handling and 404/405 responses |
+| `api/webhooks/sentry.js`, `src/integrations/sentry-webhook.js` | Verify the bounded signed demo alert | HMAC, project/tag/release checks and a receipt marked processing not connected; no persistence/worker |
 | [core](../src/core/README.md) | General conversation/context, exact approvals, task/job contracts and background execution | Brief only |
 | [voice](../src/voice/README.md) | Incoming/outgoing phone transport, caller binding, proactive callback opening | Brief only |
-| [integrations](../src/integrations/README.md) | Bounded adapters for existing OpenAI, storage, phone, repository, error and deployment services | Brief only |
+| [integrations](../src/integrations/README.md) | Bounded adapters for existing OpenAI, storage, phone, repository, error and deployment services | Sentry verifier implemented; other adapters planned |
 | [developer demo](../src/demos/developer/README.md) | Incident-specific input, actions and evidence | Brief only; primary journey |
 | [everyday-help demo](../src/demos/everyday-help/README.md) | Older-adult help/reminder example on the same core | Outline only |
 
@@ -41,6 +45,6 @@ The shared worker chooses registered scenario tools. The scenario supplies capab
 
 ## Implementation boundary
 
-The local server uses Node built-ins so collaborators can run it immediately without credentials or dependency setup. Production currently serves static files only. This does not replace the established service architecture. Introduce reviewed dependencies and backend deployment adapters only with the slice that needs them. Real provider clients, storage schema, scheduler and application interactions remain future work.
+The local server and verifier use Node built-ins. Production serves static files plus the Node Web Request webhook function. The function consumes only the existing Client Secret/project ID, performs no provider requests and returns a validation receipt. Durable storage/deduplication must be connected before receipt verification can become queued work. Real provider clients, storage schema, scheduler and application interactions remain future work. See [receiver boundaries](SENTRY_WEBHOOK.md).
 
 All service credentials stay outside the agent-visible coding workspace and public repository. Reuse existing service setup; preserve caller/repository/action authorization. Local health is process evidence only.

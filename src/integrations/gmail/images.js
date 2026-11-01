@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { requireValue, safeId } from './composio.js';
 
 // Conservative demo bound; verify the complete Composio route before raising it.
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
-export const MAX_RAW_BYTES = 4 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_RAW_BYTES = 10 * 1024 * 1024;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const extensions = { 'image/png': /\.png$/i, 'image/jpeg': /\.jpe?g$/i, 'image/webp': /\.webp$/i };
 

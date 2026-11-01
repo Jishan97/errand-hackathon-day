@@ -3,14 +3,18 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Initial scaffold for Errand's developer and everyday phone-help demos",
+  "description": "Errand: signed Sentry incidents, verified repairs and completion calls",
   "engines": {
     "node": "24.x"
   },
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "check": "node --check src/app.js && node --check src/server.js && node --check public/connections.js && node --test test/*.test.js",
-    "test": "node --test test/*.test.js"
+    "check": "node scripts/check.js",
+    "test": "node --test test/*.test.js tests/*.test.js"
+  },
+  "dependencies": {
+    "@vercel/functions": "3.6.1",
+    "openai": "7.47.0"
   }
 }

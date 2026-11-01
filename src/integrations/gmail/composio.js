@@ -13,26 +13,26 @@ export function safeId(value) {
 export function createComposioGmail({ apiKey, authConfigId, fetchImpl = fetch }) {
   requireValue(typeof apiKey === 'string' && apiKey.length > 0, 'setup_required', 503);
   safeId(authConfigId);
-  async function request(path, body) {
+  async function request(path, body, timeoutMs = 20000) {
     let response;
     try {
       response = await fetchImpl(`https://backend.composio.dev${path}`, {
         method: body ? 'POST' : 'GET', redirect: 'error',
         headers: { 'x-api-key': apiKey, 'Content-Type': 'application/json' },
-        ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(20000),
+        ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(timeoutMs),
       });
       if (!response.ok) throw new Error('provider');
       return await response.json();
     } catch { throw new GmailError('provider_unavailable', 502); }
   }
-  async function gmail(binding, path, method = 'GET', body) {
+  async function gmail(binding, path, method = 'GET', body, timeoutMs) {
     // Every path is built below; neither an agent nor the browser can supply an endpoint.
     const result = await request('/api/v3.1/tools/execute/proxy', {
       connected_account_id: safeId(binding.accountId), user_id: binding.userId,
       endpoint: `https://gmail.googleapis.com/gmail/v1/users/me/${path}`, method,
       ...(body ? { body } : {}),
-    });
-    if ([400, 401, 403, 404].includes(result.status) && result.data?.error?.code === result.status) {
+    }, timeoutMs);
+    if ([400, 401, 403, 404, 413].includes(result.status) && result.data?.error?.code === result.status) {
       throw new GmailError('provider_rejected', 502);
     }
     requireValue(Number.isInteger(result.status) && result.status >= 200 && result.status < 300
@@ -74,10 +74,10 @@ export function createComposioGmail({ apiKey, authConfigId, fetchImpl = fetch })
     read: (binding, id) => gmail(binding, `messages/${safeId(id)}?format=full`),
     readAttachment: (binding, messageId, attachmentId) => {
       requireValue(typeof attachmentId === 'string' && /^[A-Za-z0-9_-]{1,2048}$/.test(attachmentId));
-      return gmail(binding, `messages/${safeId(messageId)}/attachments/${attachmentId}`);
+      return gmail(binding, `messages/${safeId(messageId)}/attachments/${attachmentId}`, 'GET', undefined, 60000);
     },
-    saveDraft: (binding, message) => gmail(binding, 'drafts', 'POST', { message }),
+    saveDraft: (binding, message) => gmail(binding, 'drafts', 'POST', { message }, 60000),
     readDraft: (binding, id) => gmail(binding, `drafts/${safeId(id)}?format=full`),
-    send: (binding, message) => gmail(binding, 'messages/send', 'POST', message),
+    send: (binding, message) => gmail(binding, 'messages/send', 'POST', message, 60000),
   });
 }

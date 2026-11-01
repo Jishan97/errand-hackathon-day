@@ -23,9 +23,9 @@ async function api(path, options = {}) {
 function failed(error) {
   account.hidden = true;
   if (error.message === 'sign_in_required') {
-    show('Sign-in needed', 'Sign in to your Errand account through your setup host, then check again.');
+    show('Sign-in needed', 'Open the operator sign-in link above, sign in, then return here and check again.');
   } else if (error.message === 'setup_required') {
-    show('Setup pending', 'Gmail setup is not available on this preview yet. Please ask your setup host to finish connecting the service.');
+    show('Setup pending', 'Gmail setup is not available on this preview yet. Ask the demo operator to complete activation.');
   } else if (['connection_unavailable', 'not_connected'].includes(error.message)) {
     show('Reconnect needed', 'Your Gmail connection needs attention. Connect again to review access with Google.', true);
   } else {

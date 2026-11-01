@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer"><title>Gmail operator demo · Errand</title>
+  <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/gmail.css">
+  <script type="module" src="/gmail.js"></script></head>
+<body><main class="gmail-page">
+  <header><a class="wordmark" href="/">errand.</a><nav><a href="/connections.html">Connections</a><a href="/incident.html">Incident demo</a></nav></header>
+  <p class="eyebrow">OPERATOR DEMO</p><h1>Gmail, with your say-so.</h1>
+  <p>Connect one dedicated demo mailbox. Read an email, prepare a message, then approve its exact contents. This console uses the Gmail worker; phone and chat integration are still separate.</p>
+  <p id="notice" role="status" aria-live="polite">Checking sign-in…</p>
+  <section id="sign-in"><h2>Operator sign-in</h2><form id="login-form">
+    <label for="operator-token">Existing operator token</label><input id="operator-token" type="password" autocomplete="off" required>
+    <button type="submit">Sign in</button></form><p>The token is cleared after sign-in. Your session lasts 30 minutes.</p></section>
+  <div id="workspace" hidden>
+    <div class="session-actions"><a href="/connections.html">Connect or check Gmail →</a><button id="logout" type="button">Sign out</button></div>
+    <section><h2>Read your mail</h2><form id="search-form"><label for="query">Gmail search</label>
+      <input id="query" maxlength="500" placeholder="subject:repair" required><button type="submit">Search</button></form>
+      <div id="messages"></div><pre id="email" aria-live="polite"></pre></section>
+    <section><h2>Prepare a message</h2><form id="prepare-form">
+      <label for="action">Action</label><select id="action"><option value="save_draft">Save a draft</option><option value="send">Send an email</option></select>
+      <label for="recipient">One recipient</label><input id="recipient" type="email" required maxlength="254" placeholder="recipient@example.test">
+      <label for="subject">Subject</label><input id="subject" required maxlength="120">
+      <label for="body">Message</label><textarea id="body" rows="5" required maxlength="1500"></textarea>
+      <details><summary>Attach an image already saved by the worker</summary>
+        <p>Image generation is not available in this demo yet. A future worker can save a PNG, JPEG or WebP up to 5 MiB under this task. This console does not generate or upload images.</p>
+        <label for="asset-task">Existing task ID</label><input id="asset-task" autocomplete="off">
+        <label for="asset-id">Saved image asset ID</label><input id="asset-id" autocomplete="off" maxlength="200"></details>
+      <button type="submit">Prepare for review</button><button id="new-message" type="button">Start a new message</button>
+    </form></section>
+    <section id="review" hidden><h2>Review before approving</h2><pre id="readback"></pre>
+      <label class="check"><input id="confirmed" type="checkbox">I confirm this recipient, action and exact message.</label>
+      <label class="check" id="image-confirmation" hidden><input id="attachment-confirmed" type="checkbox">I approve the described image. I understand I have not previewed it here.</label>
+      <div class="buttons"><button id="approve" type="button" disabled>Approve</button><button id="cancel" type="button">Cancel before execution</button></div>
+      <p id="outcome" role="status"></p><div class="buttons"><button id="check" type="button">Check status</button><button id="resume" type="button">Resume / verify outcome</button></div>
+      <p>Verification confirms Gmail's stored message and attachment, not delivery or that someone read it. An uncertain result must be checked before sending again.</p>
+      <details><summary>Close an unresolved result after manual mailbox review</summary>
+        <p>Use this only after checking Gmail yourself. It records an unresolved outcome as manually closed, not as success or failure. The approval remains consumed and no email is retried. An active worker must finish first.</p>
+        <label class="check"><input id="manual-ack" type="checkbox">I checked the mailbox and understand this email may already have been sent.</label>
+        <button id="close-manual" type="button" disabled>Record manual closure</button></details>
+    </section>
+  </div>
+</main></body></html>

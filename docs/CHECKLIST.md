@@ -1,8 +1,12 @@
 # Where we are and what is left
 
+> **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
+
 Reconciled on 1 November 2026. The immediate direction is a small live web foundation, then selective reuse of MVP work. Two demos remain the goal: developer incident assistance first, everyday phone help/reminders for older adults second.
 
 ## Done
+
+- [x] On `codex/composio-gmail`: main `38bbe72` integrated with a single-user Gmail operator console, managed OAuth, durable approval/worker/recovery, and 5 MiB image-attachment adapter. [Activation and live acceptance](GMAIL_OPERATOR.md) remain owner-run. General phone/chat and image generation are not implemented by this slice.
 
 - [x] Public hackathon source repository, with work pushed to `main`.
 - [x] [Minimal web page live](https://errand-hackathon-day.vercel.app) without sign-in.
@@ -12,6 +16,7 @@ Reconciled on 1 November 2026. The immediate direction is a small live web found
 - [x] Initial collaborator brief, architecture boundaries and staged plan.
 - [x] UI-only instructions written for the existing developer demo and published as a single-file draft PR in its private repository. The PR is not merged yet.
 - [x] Existing demo source stays under MVP; its repository and deployment connections remain in place.
+- [x] Minimal signed Sentry receiver deployed to production in `77ab8f4`, with 13 credential-free tests passing on Node.js 24 and 26. Anonymous production method/authentication/content-type/query checks pass and static assets still match source. It returns validation-only receipts; real signed Sentry delivery remains pending.
 
 ## Existing setup to reuse
 
@@ -21,9 +26,9 @@ Reconciled on 1 November 2026. The immediate direction is a small live web found
 | OpenAI / GPT Live | Existing API/voice setup is owner-confirmed; preparation records include provider and real-call evidence. No replacement keys are requested. | Bring over the minimal voice/reasoning/coding integration and run its relevant acceptance check. |
 | Twilio | Existing incoming/outgoing phone preparation is recorded. | Connect the selected conversation/callback path to the new app. |
 | Supabase | Existing service setup and preparation contracts are available. | Reuse only the task/approval/job storage needed for the selected slice. |
-| Sentry | First controlled capture passes: the owner-run upload failure is visible in the selected Sentry project as the matching issue with one event. No private value was inspected. | Obtain the main backend's internal integration settings and prove signed alert delivery; no findings call or repair flow is verified yet. |
+| Sentry | First controlled capture passes; internal integration creation is verified and the owner reports saving updated backend credentials. Receiver deployed in 77ab8f4; offline tests and anonymous production rejection/routing checks pass. Replacement values/private settings were not inspected. | Connect the matching Sentry Issue Alert and prove real signed delivery. Durable incident processing, findings call and repair flow remain disconnected. |
 
-Existing account readiness is different from end-to-end acceptance in this new app. At present, the hackathon site serves static files and has no live provider clients, webhook handler, phone bridge, worker, coding action or reminder scheduler. Do not re-provision the existing integrations or reopen old setup failures without new evidence.
+Existing account readiness is different from end-to-end acceptance. The hackathon app has static files plus a validation-only [signed webhook handler](SENTRY_WEBHOOK.md). It has no provider clients, persistent incident intake, phone bridge, worker, coding action or reminder scheduler. Do not re-provision existing integrations or reopen old setup failures without new evidence.
 
 ## Next, in order
 
@@ -38,13 +43,14 @@ For this demonstration, one monitoring project for the **existing demo app** is 
 | Existing demo under `mvp/demos/developer/` | Reports the planted error to Sentry. | Existing Sentry SDK plus the demo project's `SENTRY_DSN`. |
 | Main app in `hackathon-day/` | Receives signed Sentry alerts and coordinates the approved Errand response. | A backend webhook receiver, verification secret, project/org binding and scoped API token. It does not need its own monitoring DSN/SDK for this role. |
 
-Monitoring errors inside Errand itself is optional later work and can use a separate Sentry monitoring project. It is not required to demonstrate the controlled target's failure. The main app is currently static; its receiver still needs to be brought across and verified before activating the alert.
+Monitoring errors inside Errand itself is optional later work. The main app's minimal receiver verifies the target's signed alert; first confirm its production route, then use an owner-run Sentry delivery check before claiming live acceptance.
 
 - [x] Owner reports obtaining the existing demo's DSN after the monitoring-project setup. No new Node app, repository or deployment is required; the private value was not shared or inspected.
 - [x] Verify the existing demo's SDK/DSN reporting path: the owner triggered the fictional upload failure and showed the matching **Fictional plant upload failed** issue with one event in Sentry. Private save/redeployment details were not inspected; this is one real capture, not full alert/repair acceptance.
-- [ ] Record the demo project's numeric ID and organization slug privately.
-- [ ] Create an internal integration for the eventual signed Issue Alert delivery and API access. Enable its Alert Rule Action. The existing implementation expects a webhook Client Secret and an organization token with the issue-write permission used to resolve the incident.
-- [ ] Apply the settings below privately, using the existing sanitized template in the parent workspace. Do not paste any values into chat or source control.
+- [x] Create the internal integration with Issue & Event Read & Write. Its saved creation/permission is verified; webhook URL and Alert Action remain blank/off.
+- [x] Owner reports adding updated Sentry credentials on the main `errand-hackathon-day` Vercel project, following the numeric-project-ID/org-slug field guidance. Exact values, environment scope and replacement/revocation were not inspected.
+- [ ] Verify the saved backend settings through the eventual deployed receiver and an owner-run redacted check. Private save is not authenticated runtime acceptance.
+- [ ] Enable the integration's Alert Action only after its receiver URL is deployed and verified, then configure the matching Issue Alert rule.
 
 | Existing setting name | Destination/purpose |
 | --- | --- |
@@ -56,7 +62,9 @@ Monitoring errors inside Errand itself is optional later work and can use a sepa
 
 These names already exist in `mvp/.env.example` in the parent workspace. No new credential names or template changes are needed. Keep `ENABLE_INCIDENT_DEMO` disabled until the intended backend, migration and rehearsal prerequisites are ready.
 
-Do not point the alert at the new static website yet: `/api/webhooks/sentry` is not implemented there. The core owner must confirm the intended deployed handler before the Issue Alert is activated. Preserve the existing project/tag/release filter and fictional-data constraints; an alert is not permission to modify or merge code.
+The separate demo's only manually configured Sentry input is `SENTRY_DSN`; its existing upload handler obtains release metadata from Vercel automatically. Its prior captured event already passed. Main-project credential changes do not require adding the backend token/Client Secret to the target or redeploying that target. A newly added/changed DSN requires a new target deployment.
+
+The handler path is `/api/webhooks/sentry`. After its production deployment/routing checks pass, follow the [owner-run delivery steps](SENTRY_WEBHOOK.md#tests-and-owner-run-live-check) to set the URL and activate the matching Issue Alert. Preserve the project/tag/release filter and fictional-data constraints. A verified receipt is not queued work or permission to modify/merge code; this slice acknowledges validation only and logs a sanitized receipt.
 
 Official setup references: [internal integration and auth token](https://docs.sentry.io/api/guides/create-auth-token/), [enable an alert action](https://www.sentry.help/en/articles/17443113-how-can-i-enable-webhooks-as-an-alert-action-in-sentry), [issue-update permission](https://docs.sentry.io/api/events/update-an-issue/).
 

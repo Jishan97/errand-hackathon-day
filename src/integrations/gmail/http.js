@@ -1,5 +1,20 @@
 import { GmailError } from './composio.js';
 
+// Vercel's Web Request entry points share the exact Node handler behavior.
+// No request body is consumed by connection status/connect/callback routes.
+export async function handleConnectionsRequest(request, options = {}) {
+  const headers = new Headers(); let status = 200; let body = '';
+  const response = {
+    setHeader: (name, value) => headers.set(name, value),
+    writeHead: (code, values = {}) => { status = code; for (const [name, value] of Object.entries(values)) headers.set(name, value); },
+    end: value => { body = value ?? ''; },
+  };
+  const handled = await createConnectionsHandler({ ...options,
+    authenticate: options.authenticate ? () => options.authenticate(request) : undefined,
+  })({ method: request.method, headers: Object.fromEntries(request.headers) }, response, new URL(request.url));
+  return handled ? new Response(body, { status, headers }) : null;
+}
+
 export function createConnectionsHandler({ connections, authenticate, publicOrigin } = {}) {
   return async (request, response, url) => {
     if (!url.pathname.startsWith('/api/connections/')) return false;

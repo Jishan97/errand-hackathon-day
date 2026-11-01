@@ -1,33 +1,26 @@
-# Minimal web deployment
+# Deployment and verification
 
-The Gmail worktree adds a static `/connections.html` screen and optional Node connection handlers. `npm run check` now also runs credential-free tests. Vercel's `public/` output remains static: the teammate must mount the authenticated handlers in the shared backend before OAuth works. Do not treat a page deployment as a Gmail integration deployment. See [Gmail setup](GMAIL_INTEGRATION.md) for the required public HTTPS verifier, constructor settings and live acceptance steps. No private settings are loaded by this preview.
+Source is the public [errand-hackathon-day](https://github.com/Jishan97/errand-hackathon-day) repository, production branch main. Vercel publishes [errand-hackathon-day.vercel.app](https://errand-hackathon-day.vercel.app) through its existing Git connection. Generated/scoped aliases may require authentication; use the short public URL.
 
-The immediate goal is a working public page and a repeatable Git-to-Vercel pipeline. Bring MVP capabilities across one at a time after this foundation works. Keep existing demos and their connections in MVP.
+The Gmail connections/operator pages and API functions coexist with the incident routes in this branch. Follow [operator activation](GMAIL_OPERATOR.md): apply `db/gmail.sql`, reuse main's operator/Supabase/base-URL settings and explicitly enable `ENABLE_GMAIL_DEMO`. Its default is disabled. Gmail activation is independent of `ENABLE_FAST_INCIDENT_DEMO`; no Sentry production handler or table is changed.
 
-## Source and target
+The repository root is this standalone repository, not a nested hackathon-day path. The Other preset installs the pinned lockfile with npm ci --ignore-scripts, runs syntax checks and both offline JavaScript test directories, and publishes public/ plus incident and Gmail API entry points. Node.js is 24.x. Functions have a 300-second limit; the incident driver stops starting new steps after 220 seconds and persists work for explicit resume. Gmail durably queues approval before `waitUntil`, then reconciles interrupted claimed work after a five-minute lease. There is no new scheduler.
 
-- Source: [errand-hackathon-day](https://github.com/Jishan97/errand-hackathon-day), production branch `main`.
-- Vercel project: `errand-hackathon-day`, in the owner's existing Vercel account.
-- Public production URL: [errand-hackathon-day.vercel.app](https://errand-hackathon-day.vercel.app). Use this for sharing; generated deployment/scoped aliases can require Vercel sign-in.
-- Repository root: the root of this standalone repository. Do not configure a `hackathon-day/` root directory inside it.
-- Production files: only `public/`. MVP and preparation records are outside this repository and output.
+The [controlled repair guide](FAST_INCIDENT.md) describes private activation, exact-revision approval, schema deployment and live acceptance. The owner manages Vercel settings; agents do not pull environment files or inspect values. Native Git delivery needs no extra deployment token.
 
-## Build settings
+## Local checks
 
-Tracked [vercel.json](../vercel.json) selects the Other framework preset, skips installation because there are no dependencies, runs `npm run check`, and publishes `public/`. Node is pinned to 24.x for the build check. There is no bundler or application framework to provision.
+```sh
+npm ci --ignore-scripts
+npm run check
+npm test
+npm run dev
+```
 
-The native Vercel GitHub integration handles deployments from pushes to `main`. No GitHub Actions deployment token, private dotenv loading or environment pull is required. Use small reviewed commits; normal `git push origin main` updates the production site once the project connection is active. Do not force-push over the collaborator's changes.
+Local preview serves allowlisted pages and adapts the same webhook/operator routes, with provider access disabled. Tests inject fictional values. The PostgreSQL harnesses `db/test-fast-incident.mjs` and `db/test-gmail.mjs` run against an isolated PGlite installation with no project credentials.
 
-## Local preview
+## Release acceptance
 
-Run `npm run check`, then `npm run dev`. Open `http://127.0.0.1:3000/`. The Node server serves an explicit allowlist of the same HTML, CSS and health JSON used in production; it reads no private configuration and makes no provider requests.
+Verify the READY deployment's commit, public home and /incident.html, webhook GET405/unsignedPOST401, and operator unauthenticated401. Never include real operator tokens or signatures in agent-run probes. The owner performs the authenticated rehearsal and reports only redacted outcomes. Static /healthz is publication evidence only and deliberately says servicesConnected:false.
 
-`/healthz` maps to static `health.json` on Vercel. It reports `stage: web-foundation` and `servicesConnected: false`. It proves publication/routing of that file, not application startup, database access, phone service or either full demo. Local non-GET/HEAD requests and unknown paths are rejected; production uses Vercel's static-file routing.
-
-## Release evidence
-
-Before reporting success, check Vercel's deployment status and source commit, then verify the production page and CSS without authentication. Compare the served content with the committed files. A second normal commit should create its own Git-triggered deployment; this distinguishes a repeatable pipeline from a one-off upload.
-
-The public page labels both demos as planned. No calls, task writes, coding sessions, reminders or backend services are enabled here. Existing MVP/demo deployments and secret settings are unchanged.
-
-Official references: [Vercel GitHub deployments](https://vercel.com/docs/git/vercel-for-github), [static project configuration](https://vercel.com/docs/project-configuration/vercel-json). Recheck the applicable docs when adding the first backend capability.
+Before claiming end-to-end success, observe a real signed event, actual hosted before/after proof, expected CI, exact deployed commit and sample success, then a heard callback. A mocked call submission or queued job does not establish this.

@@ -7,6 +7,7 @@ import { createGmailConnections } from '../src/integrations/gmail/connections.js
 import { createGmailCapability, bindGmailTools, gmailTools } from '../src/integrations/gmail/capability.js';
 import { createApp } from '../src/app.js';
 import { verifyImages } from '../src/integrations/gmail/images.js';
+import { MAX_IMAGE_BYTES, MAX_RAW_BYTES } from '../src/integrations/gmail/images.js';
 
 // Entirely fictional fixtures. Memory state exists ONLY in tests, never in the app.
 const ctx = { userId: 'test-user', sessionId: 'test-session', taskId: 'test-task', revision: 1 };
@@ -386,6 +387,19 @@ const imageAsset = () => ({ assetId: 'image-test', userId: ctx.userId, taskId: c
   filename: 'greeting.png', mimeType: 'image/png', description: 'A tiny greeting image.', bytes: pngBytes() });
 const imageInput = { ...input, attachmentAssetIds: ['image-test'] };
 
+test('a full 5 MiB image fits the encoded MIME cap; one additional byte is rejected', async () => {
+  assert.equal(MAX_IMAGE_BYTES, 5 * 1024 * 1024);
+  assert.equal(MAX_RAW_BYTES, 10 * 1024 * 1024);
+  // Synthetic bytes exercise the adapter's size boundary, not upstream image decoding.
+  const asset = imageAsset(); asset.bytes = Buffer.alloc(MAX_IMAGE_BYTES); pngBytes().copy(asset.bytes);
+  const f = fixture({ resolveImageAsset: async () => asset });
+  const p = await f.capability.prepare(ctx, imageInput);
+  assert.equal(p.attachments[0].size, MAX_IMAGE_BYTES);
+  assert.ok(f.state.proposals.get(p.proposalId).raw.length <= MAX_RAW_BYTES);
+  asset.bytes = Buffer.alloc(MAX_IMAGE_BYTES + 1); pngBytes().copy(asset.bytes);
+  await assert.rejects(f.capability.prepare({ ...ctx, revision: 2 }, imageInput), /invalid_image_size/);
+});
+
 test('image proposal creates multipart MIME and exposes metadata without bytes for approval', async () => {
   const asset = imageAsset(); let resolves = 0;
   const f = fixture({ resolveImageAsset: async (context, id) => {
@@ -438,7 +452,7 @@ test('image draft is verified using Gmail attachment bytes fetched through its m
 for (const [name, mutate, code] of [
   ['owner', a => a.userId = 'another-user', 'image_asset_not_authorized'], ['task', a => a.taskId = 'another-task', 'image_asset_not_authorized'],
   ['asset ID', a => a.assetId = 'another-image', 'image_asset_not_authorized'], ['empty bytes', a => a.bytes = Buffer.alloc(0), 'invalid_image_size'],
-  ['oversize', a => a.bytes = Buffer.alloc(2 * 1024 * 1024 + 1), 'invalid_image_size'],
+  ['oversize', a => a.bytes = Buffer.alloc(5 * 1024 * 1024 + 1), 'invalid_image_size'],
   ['HTML', a => { a.mimeType = 'text/html'; a.filename = 'image.html'; }, 'invalid_image_type'],
   ['spoofed PNG', a => a.bytes = Buffer.from('<script>fake image</script>'), 'invalid_image_type'],
   ['extension', a => a.filename = 'image.jpg', 'invalid_image_filename'], ['header injection', a => a.filename = 'a.png\r\nBcc: somebody', 'invalid_image_filename'],

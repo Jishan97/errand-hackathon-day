@@ -1,18 +1,20 @@
 # Two-demo delivery plan
 
+> **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
+
 ## Everyday contribution update — 1 November 2026
 
-Owner selected Composio-managed Gmail linking and phone-based email help. This worktree implements the connections UI and bounded Gmail integration, with other connector cards disabled. Shared identity, Agents API, storage, approvals, jobs and callbacks remain the teammate's responsibility. See [Gmail integration handoff and live acceptance checklist](GMAIL_INTEGRATION.md). The code is offline-tested; no end-to-end Gmail/phone completion is claimed. This refines the earlier open everyday scenario below without changing the primary developer demo.
+Owner selected Composio-managed Gmail linking and phone-based email help, then authorized a runnable single-user operator demo while the general phone/chat core is unavailable. This branch merges main `38bbe72` and implements `/gmail.html`, signed operator sessions, durable Gmail storage/approvals and the background worker alongside the existing Sentry routes. See [operator activation](GMAIL_OPERATOR.md) and [Gmail contracts](GMAIL_INTEGRATION.md). General caller admission, Agents API conversation, image generation and Gmail callbacks remain teammate integration work. Offline checks do not establish live Gmail/phone completion.
 
-The owner also requested generated-image email attachments. Draft/send now accept one task-owned PNG/JPEG/WebP image up to 2 MiB, freeze it into the approved proposal, and verify Gmail's returned attachment bytes. The shared core must generate/save the image and inject the asset resolver; generation and live provider/phone acceptance are still pending. See the [image contract](GMAIL_INTEGRATION.md#generated-image-attachments).
+The owner also requested generated-image email attachments. Draft/send now accept one task-owned PNG/JPEG/WebP image up to 5 MiB, freeze it into the approved proposal, and verify Gmail's returned attachment bytes. The shared core must generate/save the image and inject the asset resolver; generation and live provider/phone acceptance are still pending. See the [image contract](GMAIL_INTEGRATION.md#generated-image-attachments).
 
 ## Immediate next step — 1 November 2026
 
-Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live. The owner clarified that Sentry has not been created; existing GitHub/OpenAI/voice setup should be reused, with actual new-app wiring and acceptance still pending.
+Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live, Sentry capture in the separate demo has passed, and the owner reports saving updated main-backend credentials. Reuse existing service setup. The owner now authorizes one small signed-webhook receiver, tests and deployment; larger provider wiring remains pending.
 
 The owner asked to reduce the immediate scope: get a minimal web page live with a Vercel pipeline, then slowly select useful work from MVP. The two-demo direction remains; the larger roadmap below is future work. Keep existing demos under MVP with their current GitHub/deployment links.
 
-This step adds only a small public page, credential-free local preview, static health output and Git-driven deployment. No voice, storage, coding worker or reminder integration is brought across yet. See [deployment and verification](DEPLOYMENT.md).
+The current slice adds the [signed Sentry verifier](SENTRY_WEBHOOK.md), a Vercel function, bounded raw-body handling and offline tests, reusing the MVP's HMAC/demo filters. It returns a verification receipt marked processing not connected. No voice, storage, coding worker or reminder integration is brought across. See [deployment and verification](DEPLOYMENT.md).
 
 ## Decision — 1 November 2026
 
@@ -55,7 +57,8 @@ Retain the established Node/JavaScript approach and existing OpenAI, Twilio, Sup
 | Slice | Concrete result | Status |
 | --- | --- | --- |
 | 0. Shared starting point | Collaborator brief, module layout and credential-free HTTP shell | Implemented in this scaffold |
-| 0a. Minimal web delivery | Small public page, Vercel build/check and main-branch deployments | Current step |
+| 0a. Minimal web delivery | Small public page, Vercel build/check and main-branch deployments | Live and verified |
+| 0b. Signed Sentry delivery boundary | Reused verifier, validation-only receipt, offline tests and deployment | Implemented; real signed delivery acceptance pending |
 | 1. Shared phone/task spine | Reuse reviewed voice, context, approval and durable-work boundaries from preparation | Planned |
 | 2. Developer investigation | One selected incident produces useful findings from real evidence | Planned; primary focus |
 | 3. Developer action and result | Scoped approval, actual coding/tests/PR, allowed delivery and replay-backed callback | Planned |

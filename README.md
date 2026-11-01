@@ -6,13 +6,13 @@ Built for the [DevDay Exchange London Community Hackathon](https://luma.com/dde-
 
 Production URL: [Errand on Vercel](https://errand-hackathon-day.vercel.app).
 
-## This worktree: Gmail by phone
+## This worktree: Gmail operator demo
 
-Teammate: start with [Composio + Gmail setup](docs/COMPOSIO_GMAIL_SETUP.md), including the Agents API execution boundary and first live acceptance test.
+Teammate: start with [operator activation](docs/GMAIL_OPERATOR.md) and [Composio + Gmail setup](docs/COMPOSIO_GMAIL_SETUP.md). This branch integrates main `38bbe72` while keeping Gmail and Sentry workers independent.
 
 The everyday contribution now includes a [connections screen](public/connections.html) and a [Composio Gmail adapter and shared-core handoff](docs/GMAIL_INTEGRATION.md). Gmail alone is enabled for the demo; Calendar, Outlook, Drive, Notion, WhatsApp and Telegram remain disabled preview cards. Connect once in a browser, then use the phone service once the teammate's shared core is connected.
 
-Run `npm run check` and `npm start`, then open `/connections.html`. The default credential-free preview reports setup pending. The adapter supports verified account linking, search/read, approved draft creation/send with one saved PNG/JPEG/WebP image, and content/attachment readback. It requires injected authentication, durable storage, approvals and an image-asset resolver; image generation remains shared-core work. Live OAuth, delivery and phone callbacks have **not** been verified. Production remains static until a backend is wired. The older scaffold roadmap below remains context; this worktree's precise scope is in the handoff.
+Run `npm run check`, `npm test` and `npm start`, then open `/gmail.html`. The default credential-free preview reports setup pending. The implemented operator runtime uses the existing operator token, signed browser sessions, separate Gmail tables in Supabase, Vercel background execution and exact approvals. It supports read/search, draft/send, one saved PNG/JPEG/WebP image up to **5 MiB**, and content/attachment verification. The owner must apply `db/gmail.sql` and enable/configure the runtime. Live OAuth/mailbox acceptance is pending. The general phone/chat loop, image generation and Gmail callbacks remain shared-core work; the console is not a phone demo.
 
 ## What we are building
 
@@ -29,39 +29,43 @@ The assistant should remain conversational. An existing incident or reminder is 
 
 Read the [current checklist](docs/CHECKLIST.md), [delivery plan](docs/PLAN.md), [architecture and module boundaries](docs/ARCHITECTURE.md), [contribution guide](CONTRIBUTING.md), and [agent working rules](AGENTS.md). The developer [demo brief](src/demos/developer/README.md) describes the main journey; the everyday-help [outline](src/demos/everyday-help/README.md) deliberately leaves its detailed scenario open.
 
-The current step is deliberately small: a public web page and Vercel deployments from GitHub, then selective reuse of MVP work. See [deployment and local setup](docs/DEPLOYMENT.md). Voice, AI, storage, incident handling, coding, reminders and callbacks are not connected yet. Earlier preparation results do not establish that either demo works in this repository.
+The current implementation includes the public web page, signed Sentry intake and a [controlled repair/callback flow](docs/FAST_INCIDENT.md). Its operator page approves one exact demo revision; a matching alert can run the hosted coding agent, test and merge a bounded repair, verify the live upload and submit a completion call. It remains disabled until the owner activates the new feature switch and performs the live checkpoints. Offline tests and deployed routing are separate from real provider acceptance; no sub-minute live result is claimed.
 
 ## Run the scaffold
 
-Use Node.js 24; `.nvmrc` selects that version. There are no third-party dependencies or required credentials at this stage.
+Use Node.js 24; `.nvmrc` selects that version. OpenAI and Vercel runtime dependencies are pinned in the lockfile. Local preview and offline tests need no credentials.
 
 ```sh
 git clone https://github.com/Jishan97/errand-hackathon-day.git
 cd errand-hackathon-day
+npm ci --ignore-scripts
 npm run check
+npm test
 npm run dev
 ```
 
 Open [the local web page](http://127.0.0.1:3000/) or [health endpoint](http://127.0.0.1:3000/healthz). The page describes the two planned demos; health returns JSON reporting `servicesConnected: false`. It does not test any integration. Stop with Ctrl-C. `npm start` runs the same local server without watch mode.
 
-These commands do not load dotenv files or call external services. Vercel serves only the explicit `public/` output; the Node server is for local development. The production build runs `npm run check` before publishing.
+These commands do not load dotenv files or call external services. Vercel publishes `public/` alongside `api/webhooks/sentry.js`; the local server adapts requests to the same verifier with empty configuration by default. The production build runs syntax checks and all offline tests before publishing.
 
 ## Project layout
 
 ```text
 docs/                     Delivery plan and architecture
 public/                   Small web page, stylesheet and static health JSON
-vercel.json               Static output, health route and build check
-src/app.js                Local server for the same public files
+vercel.json               Static output, function settings, health route and checks
+api/webhooks/sentry.js     Vercel Web Request entry point
+src/app.js                Local public-file server and webhook adapter
 src/server.js             Loopback-only local entry point
 src/core/                 Shared conversation/task/approval/worker boundaries
 src/voice/                Future phone transport and callback adapter
-src/integrations/         Future wrappers around existing services
+src/integrations/         Signed Sentry verifier and future service wrappers
+tests/                    Credential-free webhook and HTTP regression checks
 src/demos/developer/      Developer scenario brief
 src/demos/everyday-help/  Older-adult phone-help scenario outline
 ```
 
-The module directories contain briefs rather than fake implementations. Build one small, reviewable slice at a time, with the developer demo receiving most of the effort.
+`src/core/fast-worker.js` drives saved incidents; `src/agents/` verifies hosted coding results; `src/assistant/incident-github.js` handles the fixed repository; `src/storage/` contains bounded RPC adapters; `src/voice/completion-call.js` submits the verified callback. `api/incident/[action].js` protects operator actions. The everyday-help scenario remains a brief.
 
 ## Repository scope
 
@@ -71,7 +75,7 @@ Reuse the existing OpenAI, GitHub, Vercel, Supabase, Twilio and other service se
 
 ## Existing work and credits
 
-Errand's concept exploration, integration experiments and preparation work predate the hackathon build. That preparation is not included in this initial commit. Any code, templates or assets reused in the application will be credited here, with the work completed during the event identified separately.
+Errand's concept, service setup, controlled demo, integration experiments and preparation modules predate the hackathon. The receiver, hosted coding proof protocol, GitHub App/repair adapters and Twilio transport reuse that MVP work. Codex adapted and tested the combined approved run, durable storage, exact-tree merge, live verification and completion caller during the event. See [implementation credits and tests](docs/FAST_INCIDENT.md#local-verification-and-credits). No external visual assets or templates were added.
 
 ## Configuration privacy
 

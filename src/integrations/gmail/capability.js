@@ -84,6 +84,18 @@ function spokenRecipient(to) {
   return [...to].map(char => punctuation[char] ?? char).join(' ');
 }
 
+// Validate operator corrections before allocating a revision. Prepare repeats
+// this check at its own boundary; asset authorization still needs task context.
+export function validateGmailMessage(input) {
+  requireValue(input && Object.keys(input).every(k => ['action', 'to', 'subject', 'body', 'attachmentAssetIds'].includes(k)));
+  requireValue(['send', 'save_draft'].includes(input.action));
+  address(input.to); const subject = text(input.subject, 120); requireValue(!/[\r\n]/.test(subject)); text(input.body, 1500);
+  if (input.attachmentAssetIds != null) {
+    requireValue(Array.isArray(input.attachmentAssetIds) && input.attachmentAssetIds.length <= 1, 'invalid_image_assets');
+    input.attachmentAssetIds.forEach(safeId);
+  }
+}
+
 // Do not register executeApproved as an LLM tool. Only the core's approved durable worker calls it.
 export function createGmailCapability({ provider, connections, store, approvalGate, authorizeRead, resolveImageAsset, now = Date.now }) {
   async function readBinding(context) {
@@ -119,8 +131,7 @@ export function createGmailCapability({ provider, connections, store, approvalGa
     },
     async prepare(context, input) {
       task(context);
-      requireValue(input && Object.keys(input).every(k => ['action', 'to', 'subject', 'body', 'attachmentAssetIds'].includes(k)));
-      requireValue(['send', 'save_draft'].includes(input.action));
+      validateGmailMessage(input);
       const binding = await readBinding(context);
       const to = address(input.to), from = address(binding.email);
       const subject = text(input.subject, 120);
@@ -191,7 +202,7 @@ export function createGmailCapability({ provider, connections, store, approvalGa
       requireValue(await approvalGate.canReconcile(context, scopeOf(proposal)) === true, 'reconcile_not_authorized', 403);
       const outcome = await store.getOutcome(proposal.id);
       requireValue(outcome, 'no_execution_to_reconcile');
-      if (outcome.status === 'verified' || outcome.status === 'rejected') return outcome;
+      if (['verified', 'rejected', 'manual_review_closed'].includes(outcome.status)) return outcome;
       // Worker authorization is tied to the claimed job, not a still-open phone call.
       const binding = await connections.bindingFor(context);
       requireValue(binding.email.toLowerCase() === proposal.from.toLowerCase(), 'connection_changed');
