@@ -1,0 +1,41 @@
+# One shared assistant, two scenarios
+
+This diagram is the target architecture. Only the local HTTP shell exists in this commit; module directories currently contain briefs.
+
+```mermaid
+flowchart LR
+    Phone[Caller] <--> Voice[Voice transport]
+    Voice <--> Core[Conversation and scoped approvals]
+    Alert[Controlled incident] --> Core
+    Core <--> Store[Saved tasks and jobs]
+    Store --> Worker[Background worker]
+    Worker --> Tools[Bounded service tools]
+    Tools --> Result[Verified result or blocker]
+    Result --> Store
+    Result --> Voice
+```
+
+## Module responsibilities
+
+| Location | Responsibility | Present now |
+| --- | --- | --- |
+| `src/app.js`, `src/server.js` | HTTP shell and local entry point; later receive reviewed routes | Overview, health, 404/405 responses |
+| [core](../src/core/README.md) | General conversation/context, exact approvals, task/job contracts and background execution | Brief only |
+| [voice](../src/voice/README.md) | Incoming/outgoing phone transport, caller binding, proactive callback opening | Brief only |
+| [integrations](../src/integrations/README.md) | Bounded adapters for existing OpenAI, storage, phone, repository, error and deployment services | Brief only |
+| [developer demo](../src/demos/developer/README.md) | Incident-specific input, actions and evidence | Brief only; primary journey |
+| [everyday-help demo](../src/demos/everyday-help/README.md) | Older-adult help/reminder example on the same core | Outline only |
+
+## Contracts to agree before implementation
+
+A task needs a type, current revision, structured request and status. An approval binds the current task/revision to a specific action and target. A job references approved work, its attempts and whether an external effect is known, failed or uncertain. A result carries evidence and an honest outcome. These are conceptual requirements, not a new committed schema or API.
+
+Suggested task stages are draft, awaiting approval, queued, running, waiting for a decision, succeeded, blocked and cancelled. Compare these with the existing preparation contracts before deciding field names or migrations. Conversation state remains separate from execution state.
+
+The shared worker chooses registered scenario tools. The scenario supplies capabilities, not a separate personality or global conversation. A pending incident must not prevent an ordinary question or reminder request.
+
+## Implementation boundary
+
+The shell uses Node built-ins so collaborators can run it immediately without credentials or dependency setup. This does not replace the established service architecture. Introduce reviewed dependencies only with the slice that needs them. The chosen deployment adapter, real provider clients, storage schema, scheduler and UI remain future work.
+
+All service credentials stay outside the agent-visible coding workspace and public repository. Reuse existing service setup; preserve caller/repository/action authorization. Local health is process evidence only.
