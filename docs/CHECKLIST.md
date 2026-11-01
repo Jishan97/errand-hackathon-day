@@ -1,5 +1,7 @@
 # Where we are and what is left
 
+> **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
+
 Reconciled on 1 November 2026. The immediate direction is a small live web foundation, then selective reuse of MVP work. Two demos remain the goal: developer incident assistance first, everyday phone help/reminders for older adults second.
 
 ## Done

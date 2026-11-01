@@ -1,5 +1,7 @@
 # One shared assistant, two scenarios
 
+> **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
+
 This diagram is the target architecture. The implemented foundation is a small static web page/local server plus one validation-only signed Sentry receiver. Vercel publishes `public/` and the API function after syntax/tests pass. The larger conversation, storage and execution flow remains planned.
 
 ```mermaid

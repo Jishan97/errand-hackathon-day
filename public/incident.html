@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Errand · Incident rehearsal</title><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/incident.css">
+<script src="/incident.js" defer></script></head>
+<body><main class="incident"><a href="/">← Errand</a><p class="eyebrow">CONTROLLED DEVELOPER DEMO</p>
+<h1>One bug. One verified callback.</h1><p>Approve this demo revision, trigger the sample attachment error, and follow its repair here.</p>
+<section><h2>1. Unlock the rehearsal</h2><label for="operator">Existing operator token</label>
+<input id="operator" type="password" autocomplete="off" spellcheck="false" placeholder="Enter privately">
+<p class="muted">Kept in this page’s memory only. Sent to this app over HTTPS. Never include it in your recording.</p>
+<button id="prepare">Read current demo revision</button><p id="revision" aria-live="polite">No revision selected.</p></section>
+<section><h2>2. Approve one run</h2><p>This authorizes Errand to change only the upload parser and its regression test in <strong>Jishan97/errand-agent-demo</strong>, open a PR, merge after checks, verify the live upload, and call your configured test number once.</p>
+<p>The approval expires in ten minutes if unused. Finish UI changes before arming: a changed demo revision stops the run.</p>
+<button id="arm" disabled>Approve this revision and arm one run</button><p id="approval" aria-live="polite"></p></section>
+<section><h2>3. Trigger and follow</h2><p>Send the fictional sample attachment in the existing demo. Sentry’s matching alert must be connected to this app.</p>
+<a href="https://errand-agent-demo-jishan97s-projects.vercel.app/upload.html" target="_blank" rel="noopener noreferrer">Open sample upload demo ↗</a>
+<div class="actions"><button id="refresh">Refresh progress</button><button id="resume" disabled>Resume saved run</button></div>
+<p id="status" role="status">Waiting for an approved Sentry alert.</p><pre id="details"></pre>
+<p class="muted">30–60 seconds is a target, not a guarantee. A successful callback is submitted only after the exact deployed commit passes the original upload. “Submitted” does not prove the call was answered. If execution pauses after several minutes, resume the saved run; uncertain writes are never repeated automatically.</p></section>
+<p id="notice" role="alert"></p></main></body></html>

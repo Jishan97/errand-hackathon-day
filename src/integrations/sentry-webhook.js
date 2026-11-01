@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 // Adapted from Errand's pre-event mvp/src/assistant/sentry.js and raw HTTP intake.
-// No storage, provider calls or work execution are connected in this slice.
+// Raw signatures are checked before the normalized event reaches durable intake.
 export const MAX_BODY_BYTES = 64 * 1024;
 
 class DeliveryError extends Error {
@@ -99,7 +99,13 @@ export async function handleSentryWebhook(request, { getConfig = () => ({}), onV
     if (!event) return reply(202, { status: 'ignored' });
 
     const receipt = { status: 'verified', receiptId: event.eventId, processing: 'not_connected' };
-    await onVerified(receipt);
+    const accepted = await onVerified(receipt, event);
+    if (accepted) {
+      if (!['queued', 'duplicate', 'unarmed'].includes(accepted.status) || accepted.receiptId !== event.eventId) {
+        throw Error('invalid_intake_receipt');
+      }
+      receipt.processing = accepted.status;
+    }
     return reply(200, receipt);
   } catch (error) {
     if (error instanceof DeliveryError) return reply(error.status, { error: error.message });

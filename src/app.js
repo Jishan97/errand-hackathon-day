@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { Readable } from 'node:stream';
 import { handleSentryWebhook } from './integrations/sentry-webhook.js';
+import { handleOperator } from './core/operator.js';
 
 // Explicit public-file allowlist; no private configuration or providers are loaded.
 const home = readFileSync(new URL('../public/index.html', import.meta.url));
@@ -14,8 +15,11 @@ const pages = new Map([
   ['/healthz', { type: 'application/json; charset=utf-8', body: health }],
   ['/health.json', { type: 'application/json; charset=utf-8', body: health }],
 ]);
+for (const [name, type] of [['incident.html', 'text/html'], ['incident.css', 'text/css'], ['incident.js', 'text/javascript']]) {
+  pages.set(`/${name}`, { type: `${type}; charset=utf-8`, body: readFileSync(new URL(`../public/${name}`, import.meta.url)) });
+}
 
-export function createApp({ sentryOptions } = {}) {
+export function createApp({ sentryOptions, operatorOptions } = {}) {
   return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json; charset=utf-8');
     response.setHeader('Cache-Control', 'no-store');
@@ -30,11 +34,14 @@ export function createApp({ sentryOptions } = {}) {
       response.end(JSON.stringify({ error: 'invalid_url' }));
       return;
     }
-    if (pathname === '/api/webhooks/sentry') {
+    if (pathname === '/api/webhooks/sentry' || pathname.startsWith('/api/incident/')) {
       try {
         const incoming = new Request(url, { method: request.method, headers: request.headers,
           ...(!['GET', 'HEAD'].includes(request.method) ? { body: Readable.toWeb(request), duplex: 'half' } : {}) });
-        const result = await handleSentryWebhook(incoming, sentryOptions);
+        const result = pathname === '/api/webhooks/sentry' ? await handleSentryWebhook(incoming, sentryOptions)
+          : await handleOperator(incoming, operatorOptions ?? {
+            getToken: () => undefined, getRuntime: () => { throw Error('local_provider_disabled'); }, schedule: () => {},
+          });
         response.writeHead(result.status, Object.fromEntries(result.headers));
         response.end(Buffer.from(await result.arrayBuffer()));
       } catch {

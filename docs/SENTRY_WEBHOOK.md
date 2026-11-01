@@ -1,5 +1,7 @@
 # Signed Sentry alert receiver
 
+> **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
+
 Endpoint: [POST /api/webhooks/sentry](https://errand-hackathon-day.vercel.app/api/webhooks/sentry).
 Opening this URL in a browser returns **405** with `Allow: POST`.
 

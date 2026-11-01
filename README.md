@@ -21,15 +21,16 @@ The assistant should remain conversational. An existing incident or reminder is 
 
 Read the [current checklist](docs/CHECKLIST.md), [delivery plan](docs/PLAN.md), [architecture and module boundaries](docs/ARCHITECTURE.md), [contribution guide](CONTRIBUTING.md), and [agent working rules](AGENTS.md). The developer [demo brief](src/demos/developer/README.md) describes the main journey; the everyday-help [outline](src/demos/everyday-help/README.md) deliberately leaves its detailed scenario open.
 
-The current implementation is deliberately small: a public web page, Vercel deployments from GitHub and a [signed Sentry alert receiver](docs/SENTRY_WEBHOOK.md) adapted from MVP work. Matching alerts return a validation receipt explicitly marked `processing: not_connected`. Voice, AI, storage, investigation, coding, reminders and callbacks are not connected yet. Earlier preparation results do not establish that either full demo works in this repository.
+The current implementation includes the public web page, signed Sentry intake and a [controlled repair/callback flow](docs/FAST_INCIDENT.md). Its operator page approves one exact demo revision; a matching alert can run the hosted coding agent, test and merge a bounded repair, verify the live upload and submit a completion call. It remains disabled until the owner activates the new feature switch and performs the live checkpoints. Offline tests and deployed routing are separate from real provider acceptance; no sub-minute live result is claimed.
 
 ## Run the scaffold
 
-Use Node.js 24; `.nvmrc` selects that version. There are no third-party dependencies. Local preview and offline tests need no credentials; deployed webhook verification uses the owner's existing Sentry configuration.
+Use Node.js 24; `.nvmrc` selects that version. OpenAI and Vercel runtime dependencies are pinned in the lockfile. Local preview and offline tests need no credentials.
 
 ```sh
 git clone https://github.com/Jishan97/errand-hackathon-day.git
 cd errand-hackathon-day
+npm ci --ignore-scripts
 npm run check
 npm test
 npm run dev
@@ -56,7 +57,7 @@ src/demos/developer/      Developer scenario brief
 src/demos/everyday-help/  Older-adult phone-help scenario outline
 ```
 
-The remaining module directories contain briefs. Build one small, reviewable slice at a time, with the developer demo receiving most of the effort.
+`src/core/fast-worker.js` drives saved incidents; `src/agents/` verifies hosted coding results; `src/assistant/incident-github.js` handles the fixed repository; `src/storage/` contains bounded RPC adapters; `src/voice/completion-call.js` submits the verified callback. `api/incident/[action].js` protects operator actions. The everyday-help scenario remains a brief.
 
 ## Repository scope
 
@@ -66,7 +67,7 @@ Reuse the existing OpenAI, GitHub, Vercel, Supabase, Twilio and other service se
 
 ## Existing work and credits
 
-Errand's concept exploration, integration experiments and preparation work predate the hackathon build. The signed receiver reuses the pre-event MVP's HMAC verifier, demo-event filters and incident digest. The Vercel adapter, bounded streaming input, validation-only response and regression tests were added during the event. Codex adapted that code and executed the tests. No other preparation implementation, external assets or templates were copied in this slice.
+Errand's concept, service setup, controlled demo, integration experiments and preparation modules predate the hackathon. The receiver, hosted coding proof protocol, GitHub App/repair adapters and Twilio transport reuse that MVP work. Codex adapted and tested the combined approved run, durable storage, exact-tree merge, live verification and completion caller during the event. See [implementation credits and tests](docs/FAST_INCIDENT.md#local-verification-and-credits). No external visual assets or templates were added.
 
 ## Configuration privacy
 

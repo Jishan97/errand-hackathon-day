@@ -33,7 +33,7 @@ const options = (onVerified = () => {}) => ({ getConfig: () => settings, onVerif
 test('verifies exact whitespace/Unicode bytes and exposes only a sanitized receipt', async () => {
   const raw = JSON.stringify({ ...event(), ignored: 'fictional café 🌿' }, null, 2);
   const receipts = [];
-  const response = await handleSentryWebhook(request({ raw }), options((receipt) => receipts.push(receipt)));
+  const response = await handleSentryWebhook(request({ raw }), options((receipt) => { receipts.push(receipt); }));
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
@@ -189,7 +189,7 @@ test('the deployed Web Request entry point rejects probes before reading deploym
 
 test('the real local HTTP adapter handles a signed upload alert and preserves static routes', async (t) => {
   const receipts = [];
-  const app = createApp({ sentryOptions: options((receipt) => receipts.push(receipt)) });
+  const app = createApp({ sentryOptions: options((receipt) => { receipts.push(receipt); }) });
   app.listen(0, '127.0.0.1');
   await once(app, 'listening');
   t.after(() => new Promise((resolve) => { app.close(resolve); app.closeAllConnections(); }));
@@ -208,4 +208,20 @@ test('the real local HTTP adapter handles a signed upload alert and preserves st
   const home = await fetch(base);
   assert.equal(await home.text(), readFileSync(new URL('../public/index.html', import.meta.url), 'utf8'));
   assert.deepEqual(await (await fetch(`${base}/healthz`)).json(), { status: 'ok', stage: 'web-foundation', servicesConnected: false });
+});
+
+test('signed delivery passes normalized evidence to durable intake and returns only the bound outcome', async () => {
+  for (const status of ['queued', 'duplicate', 'unarmed']) {
+    let bound;
+    const result = await handleSentryWebhook(request(), options((receipt, normalized) => {
+      bound = normalized;
+      return { status, receiptId: normalized.eventId };
+    }));
+    assert.equal(result.status, 200);
+    assert.equal((await result.json()).processing, status);
+    assert.equal(bound.details.baseSha, release);
+    assert.deepEqual(Object.keys(bound).sort(), ['details', 'eventId', 'project', 'title']);
+  }
+  const wrong = await handleSentryWebhook(request(), options(() => ({ status: 'queued', receiptId: 'f'.repeat(32) })));
+  assert.equal(wrong.status, 503);
 });

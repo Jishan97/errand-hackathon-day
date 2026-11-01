@@ -1,5 +1,7 @@
 # Two-demo delivery plan
 
+> **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
+
 ## Immediate next step — 1 November 2026
 
 Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live, Sentry capture in the separate demo has passed, and the owner reports saving updated main-backend credentials. Reuse existing service setup. The owner now authorizes one small signed-webhook receiver, tests and deployment; larger provider wiring remains pending.
