@@ -6,6 +6,7 @@ The immediate goal is a working public page and a repeatable Git-to-Vercel pipel
 
 - Source: [errand-hackathon-day](https://github.com/Jishan97/errand-hackathon-day), production branch `main`.
 - Vercel project: `errand-hackathon-day`, in the owner's existing Vercel account.
+- Production URL: [errand-hackathon-day-jishan97s-projects.vercel.app](https://errand-hackathon-day-jishan97s-projects.vercel.app).
 - Repository root: the root of this standalone repository. Do not configure a `hackathon-day/` root directory inside it.
 - Production files: only `public/`. MVP and preparation records are outside this repository and output.
 
