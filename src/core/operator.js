@@ -20,6 +20,13 @@ export async function handleOperator(request, { getToken, getRuntime, schedule }
   if (typeof expected !== 'string' || !/^[A-Za-z0-9_-]{32,128}$/.test(expected) || !timingSafeEqual(hash(expected), hash(supplied))) {
     return response(403, { error: 'operator_rejected' });
   }
+  // Vercel's [action] route adds its matched segment to the query string.
+  // Accept only one exact copy; it must never select a different operation.
+  const routeActions = url.searchParams.getAll('action');
+  if (routeActions.length) {
+    if (routeActions.length !== 1 || routeActions[0] !== action) return response(400, { error: 'invalid_request' });
+    url.searchParams.delete('action');
+  }
   if ((action === 'status' && url.search && (url.searchParams.size !== 1 || !receipt.test(url.searchParams.get('id') ?? ''))) ||
       (action !== 'status' && url.search)) return response(400, { error: 'invalid_request' });
   let body = {};

@@ -13,11 +13,14 @@ async function api(action, body) {
     ...(body ? { body: JSON.stringify(body) } : {}) });
   const result = await response.json();
   const setupErrors = { incident_disabled: 'Enable ENABLE_FAST_INCIDENT_DEMO=true in main Vercel Production, then redeploy.',
+    invalid_request: 'The revision request was rejected by the route. Refresh this page to load the latest version.',
+    operator_required: 'The request did not include valid operator authorization. Enter the token privately and try again.',
     incident_unconfigured: 'An existing runtime setting or enable switch is missing or invalid. Follow the setup guide privately.',
     fast_storage_unconfigured: 'Check the existing Supabase URL and secret key privately in the main deployment.',
     fast_storage_request_unconfirmed: 'Storage did not confirm this operation. Check the latest run and setup guide before retrying.',
     github_app_permissions_required: 'The selected GitHub App installation needs Checks and Actions read, plus Contents and Pull requests write.',
     github_app_not_connected: 'The existing GitHub App connection could not be found in the configured database.',
+    github_connection_unverified: 'The saved GitHub App connection does not match this demo repository. Its existing connection needs review.',
     incident_base_changed: 'The demo revision changed. Read and review its current revision again.',
     incident_ci_definition_changed: 'The demo regression workflow differs from the trusted version. Review it before arming.' };
   if (!response.ok) throw Error(setupErrors[result.error] ?? (result.error === 'incident_operation_unavailable'
