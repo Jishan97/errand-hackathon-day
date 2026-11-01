@@ -11,7 +11,9 @@ const safeErrors = new Set(['incident_disabled', 'incident_unconfigured', 'fast_
   'incident_github_disabled', 'incident_github_unconfigured', 'incident_callback_disabled',
   'incident_callback_unconfigured', 'incident_model_unconfigured', 'incident_openai_unconfigured',
   'fast_storage_request_unconfirmed', 'github_app_permissions_required', 'github_app_not_connected',
-  'github_connection_unverified', 'incident_base_changed', 'incident_ci_definition_changed']);
+  'github_connection_unverified', 'github_app_not_installed', 'github_app_authentication_failed',
+  'github_app_private_key_invalid', 'github_personal_installation_required',
+  'incident_base_changed', 'incident_ci_definition_changed']);
 
 export async function handleOperator(request, { getToken, getRuntime, schedule }) {
   const url = new URL(request.url);

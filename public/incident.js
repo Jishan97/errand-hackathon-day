@@ -31,6 +31,10 @@ async function api(action, body) {
     fast_storage_request_unconfirmed: 'Storage did not confirm this operation. Check the latest run and setup guide before retrying.',
     github_app_permissions_required: 'The selected GitHub App installation needs Checks and Actions read, plus Contents and Pull requests write.',
     github_app_not_connected: 'The existing GitHub App connection could not be found in the configured database.',
+    github_app_not_installed: 'The existing GitHub App is not installed with access to Jishan97/errand-agent-demo. Grant that repository access in its existing installation.',
+    github_app_authentication_failed: 'GitHub rejected the existing App credentials. Check that the App client ID and private key belong to the same App.',
+    github_app_private_key_invalid: 'The existing GitHub App private key could not be loaded. Check its base64 PEM format privately in the main deployment.',
+    github_personal_installation_required: 'The App installation must be active and belong to the personal owner of the demo repository.',
     github_connection_unverified: 'The saved GitHub App connection does not match this demo repository. Its existing connection needs review.',
     incident_base_changed: 'The demo revision changed. Read and review its current revision again.',
     incident_ci_definition_changed: 'The demo regression workflow differs from the trusted version. Review it before arming.' };

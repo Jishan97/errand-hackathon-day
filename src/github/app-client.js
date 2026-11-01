@@ -155,12 +155,16 @@ export function createGitHubAppClient({ config, fetcher = fetch, clock = Date.no
     } finally { clearTimeout(timer); controller.abort(); }
   }
   const api = (path, options) => request(`${apiOrigin}${path}`, options);
-  async function getInstallation(installationId) {
-    const selectedId = id(installationId);
-    const raw = await api(`/app/installations/${selectedId}`, { token: appJwt() });
+  function installationMetadata(raw) {
     const result = Object.freeze({ id: id(raw.id), appId: id(raw.app_id), account: account(raw.account), permissions: permissions(raw.permissions),
       repositorySelection: raw.repository_selection, suspended: raw.suspended_at !== null && raw.suspended_at !== undefined });
-    if (result.id !== selectedId || result.appId !== selected.appId || !["all", "selected"].includes(result.repositorySelection)) fail("github_app_installation_mismatch");
+    if (result.appId !== selected.appId || !["all", "selected"].includes(result.repositorySelection)) fail("github_app_installation_mismatch");
+    return result;
+  }
+  async function getInstallation(installationId) {
+    const selectedId = id(installationId);
+    const result = installationMetadata(await api(`/app/installations/${selectedId}`, { token: appJwt() }));
+    if (result.id !== selectedId) fail("github_app_installation_mismatch");
     return result;
   }
   function requireRepository(value) {
@@ -206,6 +210,16 @@ export function createGitHubAppClient({ config, fetcher = fetch, clock = Date.no
       return url.href;
     },
     getInstallation,
+    async getRepositoryInstallation(fullName) {
+      const repository = requireRepository(fullName);
+      try {
+        return installationMetadata(await api(`/repos/${repository.owner}/${repository.name}/installation`, { token: appJwt() }));
+      } catch (error) {
+        if (error.code === "github_app_http_error" && error.http_status === 404) fail("github_app_not_installed");
+        if (error.code === "github_app_http_error" && error.http_status === 401) fail("github_app_authentication_failed");
+        throw error;
+      }
+    },
     async createInstallationToken({ installationId, repository }) {
       const selectedId = id(installationId); requireRepository(repository);
       const cacheKey = `${selectedId}:${selected.repository.fullName.toLowerCase()}`;

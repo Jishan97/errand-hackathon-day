@@ -2,6 +2,7 @@ import { createFastStore, createFastRpc } from '../storage/fast-store.js';
 import { createIncidentRunner } from '../agents/incident-runner.js';
 import { createIncidentGithub } from '../assistant/incident-github.js';
 import { githubAppIsConfigured, githubAppConfigurationIssue } from '../github/app-client.js';
+import { createIncidentInstallationCredential } from '../github/incident-credential.js';
 import { createCompletionCaller, completionCallIsConfigured } from '../voice/completion-call.js';
 import { createFastWorker } from './fast-worker.js';
 
@@ -22,7 +23,7 @@ export function createIncidentRuntime(values) {
   if (values.OPENAI_AGENT_MODEL !== 'gpt-6.1-sol') throw Error('incident_model_unconfigured');
   if (!values.OPENAI_API_KEY) throw Error('incident_openai_unconfigured');
   const store = createFastStore({ rpc: createFastRpc({ url: values.SUPABASE_URL, secret: values.SUPABASE_SECRET_KEY }) });
-  const github = createIncidentGithub({ config });
+  const github = createIncidentGithub({ config, credential: createIncidentInstallationCredential({ config }) });
   const runner = createIncidentRunner({ config });
   const caller = createCompletionCaller({ config });
   const worker = createFastWorker({ store, github, runner, caller,
