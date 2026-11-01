@@ -4,8 +4,9 @@ import { createHash } from 'node:crypto';
 import { createComposioGmail, GmailError } from '../src/integrations/gmail/composio.js';
 import { createGmailIntegration } from '../src/integrations/gmail/index.js';
 import { createGmailConnections } from '../src/integrations/gmail/connections.js';
-import { createGmailCapability, bindGmailTools } from '../src/integrations/gmail/capability.js';
+import { createGmailCapability, bindGmailTools, gmailTools } from '../src/integrations/gmail/capability.js';
 import { createApp } from '../src/app.js';
+import { verifyImages } from '../src/integrations/gmail/images.js';
 
 // Entirely fictional fixtures. Memory state exists ONLY in tests, never in the app.
 const ctx = { userId: 'test-user', sessionId: 'test-session', taskId: 'test-task', revision: 1 };
@@ -13,7 +14,7 @@ const active = () => ({ id: 'ca_test', user_id: ctx.userId, toolkit: { slug: 'gm
   status: 'ACTIVE', is_disabled: false, auth_config: { id: 'ac_test', is_disabled: false, is_composio_managed: true } });
 const binding = () => ({ userId: ctx.userId, accountId: 'ca_test', bindingId: 'binding-test', email: 'caller@example.test' });
 const input = { action: 'send', to: 'recipient@example.test', subject: 'Repair appointment', body: 'Friday after three, please.' };
-function fixture() {
+function fixture(options = {}) {
   const state = { binding: binding(), attempts: new Map(), proposals: new Map(), outcomes: new Map(),
     approved: new Map(), claimed: new Set(), currentProposal: null, sendCount: 0, draftCount: 0, reads: 0 };
   const store = {
@@ -36,9 +37,18 @@ function fixture() {
   };
   function readback() {
     const p = state.proposals.get(state.currentProposal);
-    return { id: 'message-test', labelIds: ['SENT'], payload: { mimeType: 'text/plain',
+    const message = { id: 'message-test', labelIds: ['SENT'], payload: { mimeType: 'text/plain',
       headers: Object.entries({ From: p.from, To: p.to, Subject: p.subject, 'Message-ID': p.messageId }).map(([name, value]) => ({ name, value })),
       body: { data: Buffer.from(p.body).toString('base64url') } } };
+    if (p.images?.length) {
+      message.payload.mimeType = 'multipart/mixed';
+      message.payload.parts = [{ mimeType: 'text/plain', body: message.payload.body }, ...p.images.map(image => ({
+        mimeType: image.mimeType, filename: image.filename,
+        body: { size: image.size, data: Buffer.from(image.data, 'base64').toString('base64url') },
+      }))];
+      delete message.payload.body;
+    }
+    return message;
   }
   const provider = {
     link: async () => ({ accountId: 'ca_test', redirectUrl: 'https://connect.composio.dev/test' }),
@@ -58,7 +68,8 @@ function fixture() {
     if (state.approved.get(scope.proposalId) !== p.digest || scope.digest !== p.digest) return false;
     state.claimed.add(scope.proposalId); state.outcomes.set(scope.proposalId, { status: 'attempting' }); return true;
   }, canReconcile: async (context, scope) => context.userId === scope.userId && state.claimed.has(scope.proposalId) };
-  const capability = createGmailCapability({ provider, store, connections, approvalGate, authorizeRead: async c => c.userId === ctx.userId });
+  const capability = createGmailCapability({ provider, store, connections, approvalGate,
+    authorizeRead: async c => c.userId === ctx.userId, ...options });
   const approve = id => state.approved.set(id, state.proposals.get(id).digest);
   return { state, store, provider, connections, capability, approve, readback };
 }
@@ -367,4 +378,228 @@ test('the example core store refuses reused revisions and new proposals during u
   f.approve(p.proposalId); f.provider.send = async () => { throw new Error('timeout'); };
   await f.capability.executeApproved(ctx, p.proposalId);
   await assert.rejects(f.capability.prepare({ ...ctx, revision: 2 }, input), /stale_or_unresolved_task/);
+});
+
+// A small fictional generated PNG, independent of the MIME builder.
+const pngBytes = () => Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=', 'base64');
+const imageAsset = () => ({ assetId: 'image-test', userId: ctx.userId, taskId: ctx.taskId,
+  filename: 'greeting.png', mimeType: 'image/png', description: 'A tiny greeting image.', bytes: pngBytes() });
+const imageInput = { ...input, attachmentAssetIds: ['image-test'] };
+
+test('image proposal creates multipart MIME and exposes metadata without bytes for approval', async () => {
+  const asset = imageAsset(); let resolves = 0;
+  const f = fixture({ resolveImageAsset: async (context, id) => {
+    assert.equal(context.userId, ctx.userId); assert.equal(id, asset.assetId); resolves++; return asset;
+  } });
+  const p = await f.capability.prepare(ctx, imageInput);
+  assert.equal(f.state.sendCount, 0);
+  const saved = f.state.proposals.get(p.proposalId);
+  const mime = Buffer.from(saved.raw, 'base64url').toString('utf8');
+  const boundary = mime.match(/boundary="([^"]+)"/)[1];
+  const parts = mime.split(`--${boundary}`);
+  assert.equal(parts.length, 4); // headers, text, image, closing boundary
+  assert.match(parts[1], /Content-Type: text\/plain; charset=UTF-8/);
+  assert.equal(Buffer.from(parts[1].split('\r\n\r\n')[1].trim(), 'base64').toString(), input.body);
+  assert.match(parts[2], /Content-Type: image\/png\r\nContent-Disposition: attachment; filename="greeting.png"/);
+  assert.deepEqual(Buffer.from(parts[2].split('\r\n\r\n')[1].trim(), 'base64'), pngBytes());
+  assert.match(parts[3], /^--\r\n$/);
+  assert.ok(mime.split('\r\n').every(line => line.length <= 998));
+  const approval = await f.capability.approvalRequest(ctx, p.proposalId);
+  assert.deepEqual(approval.readback.attachments, p.attachments);
+  assert.equal(p.attachments[0].sha256, createHash('sha256').update(pngBytes()).digest('hex'));
+  assert.equal(p.attachments[0].description, asset.description);
+  assert.equal('data' in p.attachments[0], false);
+  // Source changes after proposal cannot change the approved bytes or trigger another resolve.
+  asset.bytes.fill(0); asset.description = 'Changed image';
+  let sentRaw;
+  f.provider.send = async (_binding, message) => { sentRaw = message.raw; return { id: 'message-test' }; };
+  f.approve(p.proposalId);
+  assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'verified');
+  assert.equal(sentRaw, saved.raw); assert.equal(resolves, 1);
+});
+
+test('image draft is verified using Gmail attachment bytes fetched through its message ID', async () => {
+  const f = fixture({ resolveImageAsset: async () => imageAsset() });
+  const p = await f.capability.prepare(ctx, { ...imageInput, action: 'save_draft' });
+  f.provider.readDraft = async () => {
+    const message = f.readback(); message.payload.parts[1].body = { size: pngBytes().length, attachmentId: 'attachment-test' };
+    return { id: 'draft-test', message };
+  };
+  let reads = 0;
+  f.provider.readAttachment = async (b, messageId, attachmentId) => {
+    reads++; assert.equal(b.accountId, 'ca_test'); assert.equal(messageId, 'message-test'); assert.equal(attachmentId, 'attachment-test');
+    return { size: pngBytes().length, data: pngBytes().toString('base64url') };
+  };
+  f.approve(p.proposalId);
+  assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'verified');
+  assert.equal(reads, 1); assert.equal(f.state.draftCount, 1); assert.equal(f.state.sendCount, 0);
+});
+
+for (const [name, mutate, code] of [
+  ['owner', a => a.userId = 'another-user', 'image_asset_not_authorized'], ['task', a => a.taskId = 'another-task', 'image_asset_not_authorized'],
+  ['asset ID', a => a.assetId = 'another-image', 'image_asset_not_authorized'], ['empty bytes', a => a.bytes = Buffer.alloc(0), 'invalid_image_size'],
+  ['oversize', a => a.bytes = Buffer.alloc(2 * 1024 * 1024 + 1), 'invalid_image_size'],
+  ['HTML', a => { a.mimeType = 'text/html'; a.filename = 'image.html'; }, 'invalid_image_type'],
+  ['spoofed PNG', a => a.bytes = Buffer.from('<script>fake image</script>'), 'invalid_image_type'],
+  ['extension', a => a.filename = 'image.jpg', 'invalid_image_filename'], ['header injection', a => a.filename = 'a.png\r\nBcc: somebody', 'invalid_image_filename'],
+  ['path', a => a.filename = '../a.png', 'invalid_image_filename'], ['Unicode filename', a => a.filename = 'café.png', 'invalid_image_filename'],
+  ['description control', a => a.description = 'nice\u202Ehidden', 'invalid_image_description'], ['missing description', a => delete a.description, 'invalid_image_description'],
+]) test(`image asset rejects ${name} before persisting or sending`, async () => {
+  const asset = imageAsset(); mutate(asset);
+  const f = fixture({ resolveImageAsset: async () => asset });
+  await assert.rejects(f.capability.prepare(ctx, imageInput), e => e instanceof GmailError && e.code === code);
+  assert.equal(f.state.proposals.size, 0); assert.equal(f.state.sendCount, 0);
+});
+
+test('image requests reject unconfigured resolver, arbitrary URLs/bytes and multiple assets', async () => {
+  const f = fixture();
+  await assert.rejects(f.capability.prepare(ctx, imageInput), /image_assets_not_configured/);
+  for (const [attachmentAssetIds, code] of [[['https://example.test/image.png'], 'invalid_request'], [['one', 'two'], 'invalid_image_assets'], ['image-test', 'invalid_image_assets']]) {
+    await assert.rejects(f.capability.prepare(ctx, { ...input, attachmentAssetIds }), e => e instanceof GmailError && e.code === code);
+  }
+  for (const key of ['attachments', 'imageUrl', 'imageBytes']) {
+    await assert.rejects(f.capability.prepare(ctx, { ...input, [key]: 'untrusted' }), /invalid_request/);
+  }
+  assert.equal(f.state.proposals.size, 0);
+});
+
+for (const [name, mutate] of [
+  ['bytes', part => part.body.data = Buffer.alloc(pngBytes().length, 1).toString('base64url')],
+  ['filename', part => part.filename = 'other.png'], ['type', part => part.mimeType = 'image/jpeg'],
+  ['size', part => part.body.size++], ['invalid encoding', part => part.body.data = '!not-base64!'],
+]) test(`readback cannot verify image with mismatched ${name}`, async () => {
+  const f = fixture({ resolveImageAsset: async () => imageAsset() });
+  const p = await f.capability.prepare(ctx, imageInput); f.approve(p.proposalId);
+  f.provider.read = async () => { const m = f.readback(); mutate(m.payload.parts[1]); return m; };
+  assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'verification_pending');
+  assert.equal((await f.capability.reconcile(ctx, p.proposalId)).status, 'uncertain');
+  assert.equal(f.state.sendCount, 1);
+});
+
+test('missing or extra image parts cannot pass readback, including unexpected images on text-only mail', async () => {
+  for (const mode of ['missing', 'extra', 'text-only']) {
+    const f = fixture({ resolveImageAsset: async () => imageAsset() });
+    const p = await f.capability.prepare(ctx, mode === 'text-only' ? input : imageInput); f.approve(p.proposalId);
+    f.provider.read = async () => {
+      const m = f.readback();
+      if (mode === 'missing') m.payload.parts.pop();
+      else if (mode === 'extra') m.payload.parts.push(structuredClone(m.payload.parts[1]));
+      else { m.payload.parts = [{ mimeType: 'text/plain', body: m.payload.body }, { mimeType: 'image/png', filename: 'extra.png' }]; m.payload.mimeType = 'multipart/mixed'; delete m.payload.body; }
+      return m;
+    };
+    assert.equal(await verifyImages(f.provider, binding(), await f.provider.read(), f.state.proposals.get(p.proposalId).images), false);
+    assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'verification_pending');
+  }
+});
+
+test('nullable database image column preserves existing text-only proposals', async () => {
+  const f = fixture(); const p = await f.capability.prepare(ctx, input); f.approve(p.proposalId);
+  f.state.proposals.get(p.proposalId).images = null;
+  const approval = await f.capability.approvalRequest(ctx, p.proposalId);
+  assert.equal(approval.attachmentRequiresExplicitConfirmation, false);
+  assert.deepEqual(approval.readback.attachments, []);
+  assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'verified');
+});
+
+test('composition passes the asset resolver into the Gmail prepare capability', async () => {
+  const f = fixture(); let resolves = 0;
+  const integration = createGmailIntegration({ apiKey: 'fictional-key', authConfigId: 'ac_test', publicOrigin: 'https://errand.example.test',
+    store: f.store, approvalGate: { claim: async () => false, canReconcile: async () => false }, authorizeRead: async () => true,
+    resolveImageAsset: async () => { resolves++; return imageAsset(); },
+    fetchImpl: async () => new Response(JSON.stringify(active()), { status: 200 }),
+  });
+  const p = await integration.capability.prepare(ctx, imageInput);
+  assert.equal(resolves, 1); assert.equal(p.attachments[0].filename, 'greeting.png');
+});
+
+test('unknown image send reconciles by Message-ID without resolving or sending the source again', async () => {
+  const asset = imageAsset(); let resolves = 0;
+  const f = fixture({ resolveImageAsset: async () => { resolves++; return asset; } });
+  const p = await f.capability.prepare(ctx, imageInput); f.approve(p.proposalId);
+  f.provider.send = async () => { f.state.sendCount++; throw new Error('receipt lost'); };
+  assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'uncertain');
+  assert.equal(f.state.outcomes.get(p.proposalId).providerId, undefined);
+  asset.bytes.fill(0);
+  assert.equal((await f.capability.reconcile(ctx, p.proposalId)).status, 'verified');
+  assert.equal(resolves, 1); assert.equal(f.state.sendCount, 1);
+});
+
+test('REST sends raw MIME directly and nests raw MIME only for draft creation', async () => {
+  const { provider, calls } = restFixture({ status: 200, data: { id: 'message-test' } });
+  await provider.send(binding(), { raw: 'ZmljdGlvbmFs' });
+  await provider.saveDraft(binding(), { raw: 'ZmljdGlvbmFs' });
+  const requests = calls.map(call => JSON.parse(call.options.body));
+  assert.deepEqual(requests[0].body, { raw: 'ZmljdGlvbmFs' });
+  assert.deepEqual(requests[1].body, { message: { raw: 'ZmljdGlvbmFs' } });
+  assert.equal(requests[0].endpoint, 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send');
+  assert.equal(requests[1].endpoint, 'https://gmail.googleapis.com/gmail/v1/users/me/drafts');
+  assert.ok(requests.every(r => r.method === 'POST'));
+});
+
+test('attachment read outage reconciles without a second send, including after caller hangs up', async () => {
+  const f = fixture({ resolveImageAsset: async () => imageAsset() });
+  const p = await f.capability.prepare(ctx, imageInput); f.approve(p.proposalId);
+  f.provider.read = async () => {
+    const m = f.readback(); m.payload.parts[1].body = { size: pngBytes().length, attachmentId: 'attachment-test' }; return m;
+  };
+  f.provider.readAttachment = async () => { throw new Error('timeout'); };
+  assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'uncertain');
+  f.provider.readAttachment = async () => ({ size: pngBytes().length, data: pngBytes().toString('base64url') });
+  assert.equal((await f.capability.reconcile({ ...ctx, sessionId: undefined }, p.proposalId)).status, 'verified');
+  await assert.rejects(f.capability.executeApproved(ctx, p.proposalId), /already_claimed/);
+  assert.equal(f.state.sendCount, 1);
+});
+
+test('image metadata or data tampering invalidates the proposal approval', async () => {
+  for (const key of ['description', 'data', 'sha256', 'filename']) {
+    const f = fixture({ resolveImageAsset: async () => imageAsset() });
+    const p = await f.capability.prepare(ctx, imageInput); f.approve(p.proposalId);
+    f.state.proposals.get(p.proposalId).images[0][key] = 'changed';
+    await assert.rejects(f.capability.executeApproved(ctx, p.proposalId), /proposal_changed/);
+    assert.equal(f.state.sendCount, 0);
+  }
+});
+
+test('REST image download is pinned to the bound Gmail message, including long opaque attachment IDs', async () => {
+  const { provider, calls } = restFixture({ status: 200, data: { size: 3, data: 'YWJj' } });
+  const id = 'a'.repeat(800);
+  await provider.readAttachment(binding(), 'message-test', id);
+  const body = JSON.parse(calls[0].options.body);
+  assert.equal(body.endpoint, `https://gmail.googleapis.com/gmail/v1/users/me/messages/message-test/attachments/${id}`);
+  assert.equal(body.method, 'GET'); assert.equal(body.connected_account_id, 'ca_test'); assert.equal(body.user_id, ctx.userId);
+  await assert.rejects(async () => provider.readAttachment(binding(), 'message-test', '../other'), /invalid_request/);
+  assert.equal(calls.length, 1);
+});
+
+test('strict prepare tool has a required nullable image field and keeps bytes out of tool schema', () => {
+  const schema = gmailTools.find(t => t.name === 'gmail_prepare').parameters;
+  assert.deepEqual(schema.properties.attachmentAssetIds.type, ['array', 'null']);
+  assert.ok(schema.required.includes('attachmentAssetIds'));
+  assert.equal(schema.additionalProperties, false);
+});
+
+test('image approval survives database JSON object key reordering', async () => {
+  const f = fixture({ resolveImageAsset: async () => imageAsset() });
+  const p = await f.capability.prepare(ctx, imageInput); f.approve(p.proposalId);
+  const saved = f.state.proposals.get(p.proposalId);
+  saved.images[0] = Object.fromEntries(Object.entries(saved.images[0]).reverse());
+  const approval = await f.capability.approvalRequest(ctx, p.proposalId);
+  assert.equal(approval.attachmentRequiresExplicitConfirmation, true);
+  assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'verified');
+});
+
+test('attachment structure overflow and unnamed attachment IDs cannot hide additional parts', async () => {
+  for (const mode of ['depth', 'nodes', 'unnamed']) {
+    const f = fixture({ resolveImageAsset: async () => imageAsset() });
+    const p = await f.capability.prepare(ctx, imageInput); f.approve(p.proposalId);
+    f.provider.read = async () => {
+      const m = f.readback();
+      if (mode === 'depth') for (let n = 0; n < 11; n++) m.payload.parts = [{ mimeType: 'multipart/mixed', parts: m.payload.parts }];
+      else if (mode === 'nodes') m.payload.parts.push(...Array.from({ length: 30 }, () => ({ mimeType: 'text/plain', body: {} })));
+      else m.payload.parts.push({ mimeType: 'text/plain', body: { attachmentId: 'hidden' } });
+      return m;
+    };
+    assert.equal(await verifyImages(f.provider, binding(), await f.provider.read(), f.state.proposals.get(p.proposalId).images), false);
+    assert.equal((await f.capability.executeApproved(ctx, p.proposalId)).status, 'verification_pending');
+  }
 });

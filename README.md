@@ -12,7 +12,7 @@ Teammate: start with [Composio + Gmail setup](docs/COMPOSIO_GMAIL_SETUP.md), inc
 
 The everyday contribution now includes a [connections screen](public/connections.html) and a [Composio Gmail adapter and shared-core handoff](docs/GMAIL_INTEGRATION.md). Gmail alone is enabled for the demo; Calendar, Outlook, Drive, Notion, WhatsApp and Telegram remain disabled preview cards. Connect once in a browser, then use the phone service once the teammate's shared core is connected.
 
-Run `npm run check` and `npm start`, then open `/connections.html`. The default credential-free preview reports setup pending. The adapter supports verified account linking, search/read, approved draft creation/send and readback, but requires injected authentication, durable storage and approvals. Live OAuth, delivery and phone callbacks have **not** been verified. Production remains static until a backend is wired. The older scaffold roadmap below remains context; this worktree's precise scope is in the handoff.
+Run `npm run check` and `npm start`, then open `/connections.html`. The default credential-free preview reports setup pending. The adapter supports verified account linking, search/read, approved draft creation/send with one saved PNG/JPEG/WebP image, and content/attachment readback. It requires injected authentication, durable storage, approvals and an image-asset resolver; image generation remains shared-core work. Live OAuth, delivery and phone callbacks have **not** been verified. Production remains static until a backend is wired. The older scaffold roadmap below remains context; this worktree's precise scope is in the handoff.
 
 ## What we are building
 

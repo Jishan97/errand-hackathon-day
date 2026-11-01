@@ -4,6 +4,8 @@
 
 Owner selected Composio-managed Gmail linking and phone-based email help. This worktree implements the connections UI and bounded Gmail integration, with other connector cards disabled. Shared identity, Agents API, storage, approvals, jobs and callbacks remain the teammate's responsibility. See [Gmail integration handoff and live acceptance checklist](GMAIL_INTEGRATION.md). The code is offline-tested; no end-to-end Gmail/phone completion is claimed. This refines the earlier open everyday scenario below without changing the primary developer demo.
 
+The owner also requested generated-image email attachments. Draft/send now accept one task-owned PNG/JPEG/WebP image up to 2 MiB, freeze it into the approved proposal, and verify Gmail's returned attachment bytes. The shared core must generate/save the image and inject the asset resolver; generation and live provider/phone acceptance are still pending. See the [image contract](GMAIL_INTEGRATION.md#generated-image-attachments).
+
 ## Immediate next step — 1 November 2026
 
 Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live. The owner clarified that Sentry has not been created; existing GitHub/OpenAI/voice setup should be reused, with actual new-app wiring and acceptance still pending.

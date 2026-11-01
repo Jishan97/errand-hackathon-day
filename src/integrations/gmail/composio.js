@@ -72,6 +72,10 @@ export function createComposioGmail({ apiKey, authConfigId, fetchImpl = fetch })
     profile: binding => gmail(binding, 'profile'),
     list: (binding, query) => gmail(binding, `messages?${new URLSearchParams({ q: query, maxResults: '5', includeSpamTrash: 'false' })}`),
     read: (binding, id) => gmail(binding, `messages/${safeId(id)}?format=full`),
+    readAttachment: (binding, messageId, attachmentId) => {
+      requireValue(typeof attachmentId === 'string' && /^[A-Za-z0-9_-]{1,2048}$/.test(attachmentId));
+      return gmail(binding, `messages/${safeId(messageId)}/attachments/${attachmentId}`);
+    },
     saveDraft: (binding, message) => gmail(binding, 'drafts', 'POST', { message }),
     readDraft: (binding, id) => gmail(binding, `drafts/${safeId(id)}?format=full`),
     send: (binding, message) => gmail(binding, 'messages/send', 'POST', message),
