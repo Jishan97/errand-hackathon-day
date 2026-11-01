@@ -11,7 +11,19 @@
   },
   "rewrites": [
     {
-      "source": "/api/voice/:path*",
+      "source": "/api/voice/incoming",
+      "destination": "/api/phone"
+    },
+    {
+      "source": "/api/voice/outgoing",
+      "destination": "/api/phone"
+    },
+    {
+      "source": "/api/voice/connect",
+      "destination": "/api/phone"
+    },
+    {
+      "source": "/api/voice/authenticate",
       "destination": "/api/phone"
     },
     {
@@ -23,7 +35,7 @@
       "destination": "/api/phone"
     },
     {
-      "source": "/api/internal/assistant/:path*",
+      "source": "/api/internal/assistant/status",
       "destination": "/api/phone"
     },
     {
