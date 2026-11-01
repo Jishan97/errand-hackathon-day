@@ -36,17 +36,33 @@ function settings(config) {
   const values = own(config, "values");
   const get = (key) => own(values, key);
   if (own(config, "githubAppEnabled") !== true) fail("github_app_unconfigured");
+  function field(name, validate) {
+    try { return validate(get(name)); }
+    catch {
+      const error = new Error("github_app_unconfigured");
+      error.code = "github_app_unconfigured";
+      error.setting = name;
+      throw error;
+    }
+  }
+  function checked(name, predicate) {
+    return field(name, value => { if (!predicate(value)) throw Error(); return value; });
+  }
   const selected = {
-    appId: id(get("GITHUB_APP_ID")), clientId: get("GITHUB_APP_CLIENT_ID"), clientSecret: get("GITHUB_APP_CLIENT_SECRET"),
-    privateKeyBase64: get("GITHUB_APP_PRIVATE_KEY_BASE64"), slug: get("GITHUB_APP_SLUG"), sessionSecret: get("GITHUB_APP_SESSION_SECRET"),
-    publicOrigin: origin(get("PUBLIC_BASE_URL")), repository: repositoryName(get("GITHUB_DEMO_REPO")),
+    appId: field("GITHUB_APP_ID", id),
+    clientId: checked("GITHUB_APP_CLIENT_ID", value => typeof value === "string" && /^[A-Za-z0-9_.-]{5,128}$/.test(value)),
+    clientSecret: checked("GITHUB_APP_CLIENT_SECRET", value => safeToken(value) && value.length >= 16 && value.length <= 256),
+    privateKeyBase64: checked("GITHUB_APP_PRIVATE_KEY_BASE64", value => typeof value === "string" && value.length > 0 && value.length <= 32768 && /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)),
+    slug: checked("GITHUB_APP_SLUG", value => typeof value === "string" && /^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/.test(value)),
+    sessionSecret: checked("GITHUB_APP_SESSION_SECRET", value => typeof value === "string" && /^[A-Za-z0-9_-]{32,128}$/.test(value)),
+    publicOrigin: field("PUBLIC_BASE_URL", origin),
+    repository: field("GITHUB_DEMO_REPO", repositoryName),
   };
-  if (typeof selected.clientId !== "string" || !/^[A-Za-z0-9_.-]{5,128}$/.test(selected.clientId)
-    || !safeToken(selected.clientSecret) || selected.clientSecret.length < 16 || selected.clientSecret.length > 256
-    || typeof selected.privateKeyBase64 !== "string" || selected.privateKeyBase64.length > 32768 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(selected.privateKeyBase64) || !selected.privateKeyBase64
-    || typeof selected.slug !== "string" || !/^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/.test(selected.slug)
-    || typeof selected.sessionSecret !== "string" || !/^[A-Za-z0-9_-]{32,128}$/.test(selected.sessionSecret)) fail("github_app_unconfigured");
   return selected;
+}
+
+export function githubAppConfigurationIssue(config) {
+  try { settings(config); return null; } catch (error) { return error.setting ?? null; }
 }
 
 export function githubAppIsConfigured(config) {

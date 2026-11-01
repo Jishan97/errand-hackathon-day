@@ -33,6 +33,14 @@ test('runtime setup failures identify only the component and keep provider value
       schedule: () => assert.fail('Preflight cannot schedule a repair'),
     });
     assert.equal(result.status, 503);
-    assert.deepEqual(await result.json(), { error: code });
+    assert.deepEqual(await result.json(), { error: code, ...(code === 'incident_github_unconfigured' ? { setting: field } : {}) });
+  }
+});
+
+test('GitHub setup diagnostics expose only an approved setting name, never its invalid value', async () => {
+  for (const field of ['GITHUB_APP_ID', 'GITHUB_APP_CLIENT_ID', 'GITHUB_APP_CLIENT_SECRET',
+    'GITHUB_APP_PRIVATE_KEY_BASE64', 'GITHUB_APP_SLUG', 'GITHUB_APP_SESSION_SECRET', 'PUBLIC_BASE_URL', 'GITHUB_DEMO_REPO']) {
+    assert.throws(() => createIncidentRuntime({ ...fixture, [field]: '' }), error =>
+      error.message === 'incident_github_unconfigured' && error.setting === field);
   }
 });

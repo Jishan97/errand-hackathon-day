@@ -3,6 +3,8 @@ import { REPAIR_SCOPE } from './fast-worker.js';
 
 const sha = /^[a-f0-9]{40}$/;
 const receipt = /^[a-f0-9]{32}$/;
+const githubSettings = new Set(['GITHUB_APP_ID', 'GITHUB_APP_CLIENT_ID', 'GITHUB_APP_CLIENT_SECRET',
+  'GITHUB_APP_PRIVATE_KEY_BASE64', 'GITHUB_APP_SLUG', 'GITHUB_APP_SESSION_SECRET', 'PUBLIC_BASE_URL', 'GITHUB_DEMO_REPO']);
 const hash = (v) => createHash('sha256').update(v).digest();
 const response = (status, body) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const safeErrors = new Set(['incident_disabled', 'incident_unconfigured', 'fast_storage_unconfigured',
@@ -73,5 +75,9 @@ export async function handleOperator(request, { getToken, getRuntime, schedule }
     if (Object.keys(body).join() !== 'receiptId' || !receipt.test(body.receiptId ?? '')) return response(400, { error: 'invalid_request' });
     schedule(runtime, body.receiptId);
     return response(202, { status: 'resume_requested', receiptId: body.receiptId });
-  } catch (error) { return response(503, { error: safeErrors.has(error?.message) ? error.message : 'incident_operation_unavailable' }); }
+  } catch (error) {
+    const code = safeErrors.has(error?.message) ? error.message : 'incident_operation_unavailable';
+    return response(503, { error: code, ...(code === 'incident_github_unconfigured' && githubSettings.has(error.setting)
+      ? { setting: error.setting } : {}) });
+  }
 }

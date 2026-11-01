@@ -12,6 +12,11 @@ async function api(action, body) {
     headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}) });
   const result = await response.json();
+  const githubSettings = ['GITHUB_APP_ID', 'GITHUB_APP_CLIENT_ID', 'GITHUB_APP_CLIENT_SECRET',
+    'GITHUB_APP_PRIVATE_KEY_BASE64', 'GITHUB_APP_SLUG', 'GITHUB_APP_SESSION_SECRET', 'PUBLIC_BASE_URL', 'GITHUB_DEMO_REPO'];
+  if (!response.ok && result.error === 'incident_github_unconfigured' && githubSettings.includes(result.setting)) {
+    throw Error(`Check ${result.setting} in errand-hackathon-day Production: it is missing or has an invalid format. Save the existing correct value privately, then redeploy.`);
+  }
   const setupErrors = { incident_disabled: 'Enable ENABLE_FAST_INCIDENT_DEMO=true in main Vercel Production, then redeploy.',
     invalid_request: 'The revision request was rejected by the route. Refresh this page to load the latest version.',
     operator_required: 'The request did not include valid operator authorization. Enter the token privately and try again.',
