@@ -25,7 +25,15 @@ async function api(action, body) {
     : result.error === 'operator_rejected' ? 'Operator token rejected.' : 'Request could not be completed.'));
   return result;
 }
-async function act(fn) { el('notice').textContent = ''; try { await fn(); } catch (e) { el('notice').textContent = e.message; } }
+async function act(fn) {
+  el('notice').textContent = '';
+  try { await fn(); }
+  catch (e) {
+    el('notice').textContent = e.message;
+    el('notice').focus();
+    el('notice').scrollIntoView({ block: 'center' });
+  }
+}
 async function refresh() {
   const data = await api('status');
   if (data.status !== 'found') { el('status').textContent = 'Waiting for an approved Sentry alert.'; return; }
@@ -36,9 +44,23 @@ async function refresh() {
   if (el('resume').disabled && timer) { clearInterval(timer); timer = null; }
 }
 el('prepare').onclick = () => act(async () => {
-  prepared = await api('prepare', {});
-  el('revision').textContent = `${prepared.repository} · ${prepared.baseSha}`;
-  el('arm').disabled = false;
+  const button = el('prepare');
+  button.disabled = true;
+  button.textContent = 'Checking demo revision…';
+  prepared = null;
+  el('arm').disabled = true;
+  el('revision').textContent = 'Checking access and reading the current GitHub revision…';
+  try {
+    prepared = await api('prepare', {});
+    el('revision').textContent = `${prepared.repository} · ${prepared.baseSha}`;
+    el('arm').disabled = false;
+  } catch (error) {
+    el('revision').textContent = 'Revision check failed. Approval remains disabled; see the message above.';
+    throw error;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Read current demo revision';
+  }
 });
 el('arm').onclick = () => act(async () => {
   el('arm').disabled = true;
