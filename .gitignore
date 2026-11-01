@@ -1,0 +1,21 @@
+# Private configuration and key material
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/
+.next/
+.turbo/
+
+# Local service metadata, logs and operating-system files
+.vercel/
+.supabase/
+*.log
+.DS_Store
