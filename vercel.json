@@ -11,6 +11,26 @@
   },
   "rewrites": [
     {
+      "source": "/api/voice/:path*",
+      "destination": "/api/phone"
+    },
+    {
+      "source": "/api/media",
+      "destination": "/api/phone"
+    },
+    {
+      "source": "/api/assistant/worker",
+      "destination": "/api/phone"
+    },
+    {
+      "source": "/api/internal/assistant/:path*",
+      "destination": "/api/phone"
+    },
+    {
+      "source": "/api/phone/health",
+      "destination": "/api/phone"
+    },
+    {
       "source": "/healthz",
       "destination": "/health.json"
     }

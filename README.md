@@ -6,6 +6,8 @@ Built for the [DevDay Exchange London Community Hackathon](https://luma.com/dde-
 
 Production URL: [Errand on Vercel](https://errand-hackathon-day.vercel.app).
 
+General AI phone chat and approved reminders are now implemented using the existing MVP transport and database. See [phone activation and the short reminder rehearsal](docs/PHONE_REMINDERS.md); live phone acceptance on this deployment remains pending.
+
 ## What we are building
 
 One assistant, two demonstrations, sharing conversation, scoped approvals, saved tasks, background work and callbacks.
