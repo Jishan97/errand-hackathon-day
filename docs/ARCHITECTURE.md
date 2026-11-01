@@ -4,7 +4,7 @@
 
 This branch merges main `524f0d4` and adds a runnable single-user Gmail operator lane: `public/gmail.*`, `src/core/gmail-*`, `src/storage/gmail-store.js`, `db/gmail.sql`, and Web Request API entry points around the existing Composio capability. It reuses main's operator token, Supabase project, Vercel pattern and shared HTTP shell, with separate Gmail tables and no dependency on the incident runtime. Default local preview connects no services. See [operator activation](GMAIL_OPERATOR.md) and [Gmail contracts](GMAIL_INTEGRATION.md). The older foundation descriptions below are historical.
 
-Image email follows the same worker: core image generation → private task-owned asset → injected `resolveImageAsset` → immutable Gmail proposal with image description/byte digest → explicit approval → multipart send/draft → Gmail attachment readback. The module does not generate images or download arbitrary URLs; the core owns generation, image sanitation and asset storage.
+Image email follows the same worker: core image generation → private task-owned asset → injected `resolveImageAsset` → immutable Gmail proposal with image description/byte digest → explicit approval → multipart send/draft → Gmail attachment readback. The Gmail adapter does not generate images or download arbitrary URLs. `src/agents/gmail-image.js` implements generation, sanitation and image description using the private task asset store; see [GPT Image integration](GMAIL_IMAGES.md).
 
 This diagram is the target architecture. The incident runtime and Gmail adapter coexist; general phone/caller admission remains a separate integration boundary.
 

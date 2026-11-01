@@ -2,10 +2,11 @@ import { createGmailIntegration, bindGmailTools, gmailTools } from '../integrati
 import { requireValue } from '../integrations/gmail/composio.js';
 import { createGmailStore, createGmailRpc } from '../storage/gmail-store.js';
 import { GMAIL_DEMO_USER, createGmailAuth } from './gmail-auth.js';
+import { createImageGenerator, imageTool, runImageAgent } from '../agents/gmail-image.js';
 
 export function gmailRuntimeValues(env) {
   return Object.fromEntries(['ENABLE_GMAIL_DEMO','PUBLIC_BASE_URL','OPERATOR_TOKEN','SUPABASE_URL','SUPABASE_SECRET_KEY',
-    'COMPOSIO_API_KEY','COMPOSIO_GMAIL_AUTH_CONFIG_ID'].map(name => [name, env[name]]));
+    'COMPOSIO_API_KEY','COMPOSIO_GMAIL_AUTH_CONFIG_ID','OPENAI_API_KEY'].map(name => [name, env[name]]));
 }
 
 export function gmailPublicOrigin(values) {
@@ -17,7 +18,7 @@ export function gmailPublicOrigin(values) {
   return parsed.origin;
 }
 
-export function createGmailRuntime(values, { rpc, fetchImpl, now } = {}) {
+export function createGmailRuntime(values, { rpc, fetchImpl, now, imageRpc, imageOptions = {}, agentOptions = {} } = {}) {
   const publicOrigin = gmailPublicOrigin(values);
   const auth = createGmailAuth({ token: values.OPERATOR_TOKEN, now });
   const { store, approvalGate } = createGmailStore({ userId: GMAIL_DEMO_USER,
@@ -30,8 +31,21 @@ export function createGmailRuntime(values, { rpc, fetchImpl, now } = {}) {
     requireValue(proposal?.userId === GMAIL_DEMO_USER, 'proposal_not_found', 404);
     return { userId: proposal.userId, taskId: proposal.taskId, revision: proposal.revision };
   }
-  return Object.freeze({ ...gmail, auth, store, publicOrigin, contextFor, tools: gmailTools,
-    bindTools: getAdmittedContext => bindGmailTools(gmail.capability, getAdmittedContext),
+  const generate = createImageGenerator({ apiKey: values.OPENAI_API_KEY, store, ...imageOptions,
+    claim: (context, assetId) => {
+      const call = imageRpc ?? createGmailRpc({ url: values.SUPABASE_URL, secret: values.SUPABASE_SECRET_KEY, rpcName: 'errand_gmail_image' });
+      return call('claim', context.userId, { taskId: context.taskId, revision: context.revision, assetId });
+    } });
+  // Agents API function definitions omit the Responses-only `strict` option.
+  const tools = [...gmailTools.map(({ strict, ...tool }) => tool), imageTool];
+  return Object.freeze({ ...gmail, auth, store, publicOrigin, contextFor, tools,
+    bindTools: getAdmittedContext => {
+      const gmailDispatch = bindGmailTools(gmail.capability, getAdmittedContext);
+      return async (name, args, options) => name === imageTool.name
+        ? generate(await getAdmittedContext(), args, options) : gmailDispatch(name, args);
+    },
+    generateImage: async (context, prompt) => runImageAgent({ apiKey: values.OPENAI_API_KEY, prompt,
+      generate: (args, options) => generate(context, args, options), ...agentOptions }),
     async run(proposalId) {
       const context = await contextFor(proposalId);
       const outcome = await store.getOutcome(proposalId);

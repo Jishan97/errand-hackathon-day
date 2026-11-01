@@ -6,7 +6,8 @@ const operations = new Set(['get_binding','put_attempt','get_attempt','finish_at
 const maxBytes = 20 * 1024 * 1024;
 
 // Separate limits and RPC allowlist: main's small incident transport is unchanged.
-export function createGmailRpc({ url, secret, fetcher = fetch }) {
+export function createGmailRpc({ url, secret, fetcher = fetch, rpcName = 'errand_gmail' }) {
+  requireValue(['errand_gmail', 'errand_gmail_image'].includes(rpcName));
   let origin;
   try {
     const parsed = new URL(url);
@@ -22,7 +23,7 @@ export function createGmailRpc({ url, secret, fetcher = fetch }) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30000);
     try {
-      const response = await fetcher(`${origin}/rest/v1/rpc/errand_gmail`, { method: 'POST', redirect: 'error',
+      const response = await fetcher(`${origin}/rest/v1/rpc/${rpcName}`, { method: 'POST', redirect: 'error',
         headers: { apikey: secret, 'Content-Type': 'application/json', Accept: 'application/json' }, body, signal: controller.signal });
       if (!response.ok) { await response.body?.cancel(); throw Error('storage'); }
       const reader = response.body?.getReader(); requireValue(reader);

@@ -19,6 +19,9 @@ function failure(error) {
     not_connected: 'Connect Gmail from the Connections page first.', approval_unavailable: 'Approval was not accepted. Check status; it may already be queued or attempted.',
     reconcile_not_authorized: 'The worker may still be running. Check status again shortly; interrupted workers can be reconciled after five minutes.',
     invalid_image_size: 'The image must be no larger than 5 MiB.', image_asset_not_authorized: 'That saved image does not belong to this task.',
+    image_generation_unconfigured: 'Configure the existing OpenAI API key for this deployment to generate images.',
+    image_generation_already_attempted: 'Generation already started for this task. Retry the same prompt to recover a saved image. If no image was saved, start a new message to explicitly try again.',
+    image_generation_unconfirmed: 'Image generation could not be confirmed. Retry the same prompt to recover any saved image; generation will not be repeated automatically.',
     stale_or_unresolved_task: 'Check the current task before preparing another message.', already_attempted: 'Execution has already started. Use status and verification.' };
   notice(messages[error.message] || 'The request could not be confirmed. Check status before retrying.');
   if (error.message === 'sign_in_required') { $('sign-in').hidden = false; $('workspace').hidden = true; }
@@ -30,6 +33,13 @@ async function restore(proposalId) {
 }
 async function session() {
   try { await api('session'); $('sign-in').hidden = true; $('workspace').hidden = false; notice('Signed in. Connect Gmail once, then prepare and approve a message.');
+    try {
+      const image = JSON.parse(localStorage.getItem('errand-gmail-image'));
+      if (image && /^[a-f0-9-]{36}$/.test(image.taskId)) {
+        $('asset-task').value = image.taskId;
+        if (/^[a-f0-9]{64}$/.test(image.assetId)) $('asset-id').value = image.assetId;
+      }
+    } catch { /* Only opaque task/asset IDs are stored, never prompts or images. */ }
     const pending = await api('pending');
     if (pending.proposals.length) { await restore(pending.proposals[0].proposalId); return; }
     let saved;
@@ -74,6 +84,26 @@ $('search-form').addEventListener('submit', async event => {
   } catch (error) { failure(error); }
 });
 $('prepare-form').addEventListener('input', () => { edited = true; approvalButton(); });
+$('generate-image').addEventListener('click', async () => {
+  const button = $('generate-image'); button.disabled = true; edited = true; approvalButton();
+  const prompt = $('image-prompt').value.trim();
+  const controls = [...$('prepare-form').querySelectorAll('input,textarea,select,button')];
+  controls.forEach(control => { control.disabled = true; });
+  $('image-result').textContent = 'Generating and saving your image…';
+  try {
+    if (!prompt) throw Error('invalid_image_prompt');
+    if (!$('asset-task').value.trim()) {
+      const task = await api('image-task', {}); $('asset-task').value = task.taskId;
+    }
+    try { localStorage.setItem('errand-gmail-image', JSON.stringify({ taskId: $('asset-task').value.trim() })); } catch { /* optional */ }
+    const result = await api('generate-image', { taskId: $('asset-task').value.trim(), prompt });
+    $('asset-id').value = result.image.assetId; taskId = result.taskId;
+    try { localStorage.setItem('errand-gmail-image', JSON.stringify({ taskId, assetId: result.image.assetId })); } catch { /* optional */ }
+    $('image-result').textContent = `Saved image: ${result.image.description} (${result.image.size} bytes). Prepare the message to review and approve it.`;
+    notice('Image saved. No email has been sent.');
+  } catch (error) { $('image-result').textContent = 'Image not confirmed. No email has been sent.'; failure(error); }
+  finally { controls.forEach(control => { control.disabled = false; }); }
+});
 $('prepare-form').addEventListener('submit', async event => {
   event.preventDefault(); const button = event.submitter; button.disabled = true;
   // Invalidate any displayed approval immediately, including if preparation fails.
@@ -88,7 +118,9 @@ $('prepare-form').addEventListener('submit', async event => {
     notice('Prepared only. Review the exact contents before approving.');
   } catch (error) { failure(error); } finally { button.disabled = false; }
 });
-$('new-message').addEventListener('click', () => { current = null; taskId = null; $('asset-task').value = ''; $('asset-id').value = ''; $('review').hidden = true; notice('Starting a new message. Unresolved earlier sends still block execution. Reload to restore the last saved proposal.'); });
+$('new-message').addEventListener('click', () => { current = null; taskId = null; $('asset-task').value = ''; $('asset-id').value = ''; $('image-prompt').value = ''; $('image-result').textContent = ''; $('review').hidden = true;
+  try { localStorage.removeItem('errand-gmail-image'); } catch { /* optional */ }
+  notice('Starting a new message. Unresolved earlier sends still block execution. Reload to restore the last saved proposal.'); });
 for (const name of ['confirmed', 'attachment-confirmed']) $(name).addEventListener('change', approvalButton);
 $('approve').addEventListener('click', async () => {
   $('approve').disabled = true;

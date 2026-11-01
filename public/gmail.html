@@ -22,8 +22,10 @@
       <label for="recipient">One recipient</label><input id="recipient" type="email" required maxlength="254" placeholder="recipient@example.test">
       <label for="subject">Subject</label><input id="subject" required maxlength="120">
       <label for="body">Message</label><textarea id="body" rows="5" required maxlength="1500"></textarea>
-      <details><summary>Attach an image already saved by the worker</summary>
-        <p>Image generation is not available in this demo yet. A future worker can save a PNG, JPEG or WebP up to 5 MiB under this task. This console does not generate or upload images.</p>
+      <details><summary>Generate an image to attach</summary>
+        <p>Describe an image. The agent generates and saves it, then describes the result for your approval. Generating does not send an email. Maximum attachment size: 5 MiB.</p>
+        <label for="image-prompt">Image description</label><textarea id="image-prompt" maxlength="2000" rows="3" placeholder="A cheerful birthday card with a garden of sunflowers"></textarea>
+        <button id="generate-image" type="button">Generate image</button><p id="image-result" role="status"></p>
         <label for="asset-task">Existing task ID</label><input id="asset-task" autocomplete="off">
         <label for="asset-id">Saved image asset ID</label><input id="asset-id" autocomplete="off" maxlength="200"></details>
       <button type="submit">Prepare for review</button><button id="new-message" type="button">Start a new message</button>

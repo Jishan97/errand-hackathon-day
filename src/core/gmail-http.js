@@ -3,6 +3,7 @@ import { handleConnectionsRequest } from '../integrations/gmail/http.js';
 import { createGmailAuth } from './gmail-auth.js';
 import { createGmailRuntime, gmailPublicOrigin } from './gmail-runtime.js';
 import { validateGmailMessage } from '../integrations/gmail/capability.js';
+import { validateImagePrompt } from '../agents/gmail-image.js';
 
 const response = (status, body, headers = {}) => Response.json(body, { status,
   headers: { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', ...headers } });
@@ -29,7 +30,8 @@ export async function handleGmailDemo(request, { getValues = () => ({}), createR
   const url = new URL(request.url), path = url.pathname;
   const connection = path.startsWith('/api/connections/');
   const methods = { login: 'POST', logout: 'POST', session: 'GET', search: 'POST', read: 'POST',
-    prepare: 'POST', approve: 'POST', status: 'GET', resume: 'POST', cancel: 'POST', pending: 'GET', 'close-manual': 'POST' };
+    prepare: 'POST', approve: 'POST', status: 'GET', resume: 'POST', cancel: 'POST', pending: 'GET', 'close-manual': 'POST',
+    'image-task': 'POST', 'generate-image': 'POST' };
   const action = path.startsWith('/api/gmail/') ? path.slice('/api/gmail/'.length) : '';
   if (!connection && !Object.hasOwn(methods, action)) return response(404, { error: 'not_found' });
   if (!connection && request.method !== methods[action]) return response(405, { error: 'method_not_allowed' }, { Allow: methods[action] });
@@ -57,6 +59,14 @@ export async function handleGmailDemo(request, { getValues = () => ({}), createR
         outcome: await runtime.store.getOutcome(proposalId) });
     }
     const body = await json(request);
+    if (action === 'image-task') { exact(body, []); return response(200, await runtime.store.newTask()); }
+    if (action === 'generate-image') {
+      exact(body, ['taskId', 'prompt']); id(body.taskId); validateImagePrompt(body.prompt);
+      const task = await runtime.store.getTask(body.taskId);
+      requireValue(task?.userId === context.userId, 'task_not_found', 404);
+      const image = await runtime.generateImage(task, body.prompt);
+      return response(200, { taskId: task.taskId, image });
+    }
     if (action === 'search') { exact(body, ['query']); return response(200, await runtime.capability.search(context, body.query)); }
     if (action === 'read') { exact(body, ['messageId']); return response(200, await runtime.capability.read(context, body.messageId)); }
     if (action === 'prepare') {

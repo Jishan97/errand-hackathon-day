@@ -82,3 +82,5 @@ Errand's concept, service setup, controlled demo, integration experiments and pr
 ## Configuration privacy
 
 Credentials and personal data are excluded from this repository. Private dotenv files remain owner-managed and must not be inspected, copied or committed by agents. In the parent Errand workspace, proposed configuration changes belong only in the sanitized `mvp/.env.example` template, with private fields empty.
+
+GPT Image generation is available through an Agents API function in the Gmail operator demo. See [setup, migration and shared-core integration](docs/GMAIL_IMAGES.md). Phone Gmail wiring and live provider acceptance remain pending.

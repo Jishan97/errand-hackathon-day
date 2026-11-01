@@ -7,16 +7,51 @@ import { pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { createGmailRuntime } from '../src/core/gmail-runtime.js';
 import { handleGmailDemo } from '../src/core/gmail-http.js';
+import { PNG } from 'pngjs';
 if (!process.argv[2]) throw Error('Pass an explicit PGlite module path');
 const { PGlite } = await import(pathToFileURL(process.argv[2]).href);
 const sql = await readFile(new URL('./gmail.sql', import.meta.url), 'utf8');
+const imageSql = await readFile(new URL('./gmail-image-jobs.sql', import.meta.url), 'utf8');
 const user = 'operator-demo', origin = 'https://errand.example.test', token = 'fictional_operator_token_'.repeat(2);
 const values = { ENABLE_GMAIL_DEMO: 'true', PUBLIC_BASE_URL: origin, OPERATOR_TOKEN: token, COMPOSIO_API_KEY: 'fixture-key', COMPOSIO_GMAIL_AUTH_CONFIG_ID: 'ac_test' };
 const input = { action: 'send', to: 'recipient@example.test', subject: 'Repair', body: 'Friday after three.', attachmentAssetIds: null };
+
+test('image generation claim is one-use, owner/revision scoped, and saved output prepares an exact Gmail attachment', async () => fixture(async f => {
+  await f.connect();
+  const task = await f.runtime.store.newTask(); let generations = 0;
+  const imageRpc = async (op, owner, args) => (await f.db.query('select public.errand_gmail_image($1,$2,$3) as result', [op, owner, args])).rows[0].result;
+  const runtime = createGmailRuntime({ ...values, OPENAI_API_KEY: 'fixture-key' }, {
+    rpc: f.rpc, imageRpc,
+    imageOptions: {
+      fetcher: async () => { generations++; return Response.json({ data: [{ b64_json: PNG.sync.write({ width: 2, height: 2, data: Buffer.alloc(16, 255) }).toString('base64') }] }); },
+      describeClient: { responses: { create: async () => ({ status: 'completed', output_text: 'A small white square.' }) } },
+    },
+  });
+  const dispatch = runtime.bindTools(async () => task);
+  const asset = await dispatch('generate_task_image', { prompt: 'A white square' });
+  assert.equal(generations, 1);
+  assert.deepEqual(await dispatch('generate_task_image', { prompt: 'A white square' }), asset);
+  await assert.rejects(dispatch('generate_task_image', { prompt: 'Another square' }), /already_attempted/);
+  assert.equal(await imageRpc('claim', 'other-user', { ...task, assetId: 'a'.repeat(64) }), false);
+  assert.equal(await imageRpc('claim', user, { ...task, revision: 99, assetId: 'a'.repeat(64) }), false);
+  const p = await f.prepare({ ...input, attachmentAssetIds: [asset.assetId] }, task);
+  const approval = await f.runtime.capability.approvalRequest(task, p.proposalId);
+  assert.equal(approval.attachmentRequiresExplicitConfirmation, true);
+  assert.equal(approval.readback.attachments[0].sha256, asset.sha256);
+  assert.equal(f.state.sends, 0);
+  const another = await f.runtime.store.newTask();
+  const unclaimed = await f.runtime.store.newTask();
+  await f.prepare(input, another);
+  assert.equal(await imageRpc('claim', user, { ...another, assetId: 'b'.repeat(64) }), false);
+  await f.runtime.store.approve(p.scope);
+  assert.equal(await imageRpc('claim', user, { ...unclaimed, assetId: 'c'.repeat(64) }), false);
+  await assert.rejects(f.db.exec('set role anon; select * from errand.gmail_image_claims;'), /permission denied/);
+  await f.db.exec('reset role;');
+}));
 async function fixture(run) {
   const db = new PGlite();
   try {
-    await db.exec('create role anon; create role authenticated; create role service_role bypassrls;'); await db.exec(sql);
+    await db.exec('create role anon; create role authenticated; create role service_role bypassrls;'); await db.exec(sql); await db.exec(imageSql);
     const rpc = async (op, owner, args = {}) => (await db.query('select public.errand_gmail($1,$2,$3) as result', [op, owner, args])).rows[0].result;
     const state = { sends: 0, drafts: 0, timeout: false, proposalId: null };
     let runtime;

@@ -57,9 +57,10 @@ test('Gmail flag/config is independent of Sentry and normalizes only a bare HTTP
     assert.throws(() => gmailPublicOrigin({ ...values, PUBLIC_BASE_URL: url }), /setup_required/);
   }
   assert.throws(() => gmailPublicOrigin({ ...values, ENABLE_GMAIL_DEMO: 'false' }), /setup_required/);
-  assert.equal('OPENAI_API_KEY' in gmailRuntimeValues({ ...values, OPENAI_API_KEY: 'never-read' }), false);
+  assert.equal(gmailRuntimeValues({ ...values, OPENAI_API_KEY: 'fictional-key' }).OPENAI_API_KEY, 'fictional-key');
   const runtime = createGmailRuntime(values, { rpc: async () => null });
-  assert.equal(runtime.tools.length, 3); assert.equal(typeof runtime.bindTools, 'function');
+  assert.equal(runtime.tools.length, 4); assert.equal(runtime.tools.at(-1).name, 'generate_task_image'); assert.equal(typeof runtime.bindTools, 'function');
+  assert.equal(runtime.tools.some(tool => Object.hasOwn(tool, 'strict')), false);
 });
 test('deployed method probes do not instantiate providers or require deployment secrets', async () => {
   assert.equal(connectionIndex, deployed); assert.equal(connectionAction, deployed);

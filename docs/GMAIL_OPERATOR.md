@@ -1,6 +1,6 @@
 # Gmail operator demo on the shared app
 
-This branch merges main `524f0d4` and adds a single-user Gmail console at `/gmail.html`. It reuses the existing operator token, Supabase project, Vercel deployment and Composio project. Sentry production code and its tables are unchanged. This is a web operator demo, **not yet a phone/chat agent**. It does not require Sentry, GitHub, Twilio or OpenAI to be enabled.
+This branch merges main `524f0d4` and adds a single-user Gmail console at `/gmail.html`. It reuses the existing operator token, Supabase project, Vercel deployment and Composio project. Sentry production code and its tables are unchanged. This is a web operator demo, **not yet a phone/chat agent**. Text email does not require Sentry, GitHub, Twilio or OpenAI. Image generation uses the existing OpenAI key; see [image setup](GMAIL_IMAGES.md).
 
 ## Owner activation
 
@@ -29,7 +29,7 @@ Changing a prepared message advances the same task's revision and invalidates th
 
 Main now includes general phone conversation/reminders under `src/phone/`; these commits are included unchanged. Gmail is not registered in that phone runtime yet. The shared core must bind its authenticated caller to the connected Gmail owner, choose trusted task/revision context, register `runtime.tools`, and dispatch function requests through `runtime.bindTools`. It must durably cache tool results and present the saved approval readback before recording consent. Sending remains a worker action. Replacing the single-user operator admission with caller identity is a separate integration step; do not trust caller ID or model-supplied ownership.
 
-Images require a real generation/validation worker. Create a task via `store.newTask()`, generate and sanitize the image for the user's confirmed request, then call the internal `store.putImageAsset({ assetId, userId, taskId, filename, mimeType, description, bytes })`. Use that task and asset ID in the console's saved-image fields or the `gmail_prepare` tool. The runtime resolves the bytes privately from Supabase; no upload endpoint, arbitrary URL fetcher or image generator is introduced here. PNG/JPEG/WebP are supported up to 5 MiB; filenames must be safe ASCII and the image description must match the saved pixels. The upstream worker must decode and strip private metadata/trailing bytes.
+Image generation is now implemented through an Agents API function; follow [GPT Image setup and recovery](GMAIL_IMAGES.md). The following is the internal asset contract. Create a task via `store.newTask()`, generate and sanitize the image for the user's confirmed request, then call the internal `store.putImageAsset({ assetId, userId, taskId, filename, mimeType, description, bytes })`. Use that task and asset ID in the console's saved-image fields or the `gmail_prepare` tool. The runtime resolves the bytes privately from Supabase; no upload endpoint or arbitrary URL fetcher is introduced. The generation tool decodes/re-encodes PNG pixels and describes the sanitized image before saving it. PNG/JPEG/WebP are supported up to 5 MiB; filenames must be safe ASCII and the image description must match the saved pixels. The upstream worker must decode and strip private metadata/trailing bytes.
 
 ## Checks
 
