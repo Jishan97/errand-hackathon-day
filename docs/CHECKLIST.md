@@ -21,7 +21,7 @@ Reconciled on 1 November 2026. The immediate direction is a small live web found
 | OpenAI / GPT Live | Existing API/voice setup is owner-confirmed; preparation records include provider and real-call evidence. No replacement keys are requested. | Bring over the minimal voice/reasoning/coding integration and run its relevant acceptance check. |
 | Twilio | Existing incoming/outgoing phone preparation is recorded. | Connect the selected conversation/callback path to the new app. |
 | Supabase | Existing service setup and preparation contracts are available. | Reuse only the task/approval/job storage needed for the selected slice. |
-| Sentry | **Not set up. The owner has not yet created the account.** | Create the dedicated account/project and private integration settings, then prove one real event and signed delivery. |
+| Sentry | Owner reports the demo monitoring project's DSN has been obtained; no value was shared or inspected. | Privately save the DSN on the existing demo's Production deployment and redeploy; obtain the separate backend integration settings, then prove one real event and signed delivery. |
 
 Existing account readiness is different from end-to-end acceptance in this new app. At present, the hackathon site serves static files and has no live provider clients, webhook handler, phone bridge, worker, coding action or reminder scheduler. Do not re-provision the existing integrations or reopen old setup failures without new evidence.
 
@@ -40,7 +40,7 @@ For this demonstration, one monitoring project for the **existing demo app** is 
 
 Monitoring errors inside Errand itself is optional later work and can use a separate Sentry monitoring project. It is not required to demonstrate the controlled target's failure. The main app is currently static; its receiver still needs to be brought across and verified before activating the alert.
 
-- [ ] Create the Sentry account/organization, then add one **monitoring project inside Sentry** for the existing demo app, selecting the Node.js platform. Do not scaffold another Node app, repository or deployment.
+- [x] Owner reports obtaining the existing demo's DSN after the monitoring-project setup. No new Node app, repository or deployment is required; the private value was not shared or inspected.
 - [ ] Get its DSN and privately set `SENTRY_DSN` in the **existing demo site's** Vercel Production settings; redeploy that demo through the owner's normal workflow.
 - [ ] Record the demo project's numeric ID and organization slug privately.
 - [ ] Create an internal integration for the eventual signed Issue Alert delivery and API access. Enable its Alert Rule Action. The existing implementation expects a webhook Client Secret and an organization token with the issue-write permission used to resolve the incident.
