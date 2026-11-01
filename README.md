@@ -19,7 +19,7 @@ The assistant should remain conversational. An existing incident or reminder is 
 
 ## Start here, collaborator
 
-Read the [delivery plan](docs/PLAN.md), [architecture and module boundaries](docs/ARCHITECTURE.md), [contribution guide](CONTRIBUTING.md), and [agent working rules](AGENTS.md). The developer [demo brief](src/demos/developer/README.md) describes the main journey; the everyday-help [outline](src/demos/everyday-help/README.md) deliberately leaves its detailed scenario open.
+Read the [current checklist](docs/CHECKLIST.md), [delivery plan](docs/PLAN.md), [architecture and module boundaries](docs/ARCHITECTURE.md), [contribution guide](CONTRIBUTING.md), and [agent working rules](AGENTS.md). The developer [demo brief](src/demos/developer/README.md) describes the main journey; the everyday-help [outline](src/demos/everyday-help/README.md) deliberately leaves its detailed scenario open.
 
 The current step is deliberately small: a public web page and Vercel deployments from GitHub, then selective reuse of MVP work. See [deployment and local setup](docs/DEPLOYMENT.md). Voice, AI, storage, incident handling, coding, reminders and callbacks are not connected yet. Earlier preparation results do not establish that either demo works in this repository.
 

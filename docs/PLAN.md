@@ -2,6 +2,8 @@
 
 ## Immediate next step — 1 November 2026
 
+Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live. The owner clarified that Sentry has not been created; existing GitHub/OpenAI/voice setup should be reused, with actual new-app wiring and acceptance still pending.
+
 The owner asked to reduce the immediate scope: get a minimal web page live with a Vercel pipeline, then slowly select useful work from MVP. The two-demo direction remains; the larger roadmap below is future work. Keep existing demos under MVP with their current GitHub/deployment links.
 
 This step adds only a small public page, credential-free local preview, static health output and Git-driven deployment. No voice, storage, coding worker or reminder integration is brought across yet. See [deployment and verification](DEPLOYMENT.md).
