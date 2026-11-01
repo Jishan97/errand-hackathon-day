@@ -3,9 +3,13 @@ import { REPAIR_SCOPE } from './fast-worker.js';
 
 const sha = /^[a-f0-9]{40}$/;
 const receipt = /^[a-f0-9]{32}$/;
+const githubSettings = new Set(['GITHUB_APP_ID', 'GITHUB_APP_CLIENT_ID', 'GITHUB_APP_CLIENT_SECRET',
+  'GITHUB_APP_PRIVATE_KEY_BASE64', 'GITHUB_APP_SLUG', 'GITHUB_APP_SESSION_SECRET', 'PUBLIC_BASE_URL', 'GITHUB_DEMO_REPO']);
 const hash = (v) => createHash('sha256').update(v).digest();
 const response = (status, body) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const safeErrors = new Set(['incident_disabled', 'incident_unconfigured', 'fast_storage_unconfigured',
+  'incident_github_disabled', 'incident_github_unconfigured', 'incident_callback_disabled',
+  'incident_callback_unconfigured', 'incident_model_unconfigured', 'incident_openai_unconfigured',
   'fast_storage_request_unconfirmed', 'github_app_permissions_required', 'github_app_not_connected',
   'github_connection_unverified', 'incident_base_changed', 'incident_ci_definition_changed']);
 
@@ -19,6 +23,13 @@ export async function handleOperator(request, { getToken, getRuntime, schedule }
   const expected = getToken();
   if (typeof expected !== 'string' || !/^[A-Za-z0-9_-]{32,128}$/.test(expected) || !timingSafeEqual(hash(expected), hash(supplied))) {
     return response(403, { error: 'operator_rejected' });
+  }
+  // Vercel's [action] route adds its matched segment to the query string.
+  // Accept only one exact copy; it must never select a different operation.
+  const routeActions = url.searchParams.getAll('action');
+  if (routeActions.length) {
+    if (routeActions.length !== 1 || routeActions[0] !== action) return response(400, { error: 'invalid_request' });
+    url.searchParams.delete('action');
   }
   if ((action === 'status' && url.search && (url.searchParams.size !== 1 || !receipt.test(url.searchParams.get('id') ?? ''))) ||
       (action !== 'status' && url.search)) return response(400, { error: 'invalid_request' });
@@ -64,5 +75,9 @@ export async function handleOperator(request, { getToken, getRuntime, schedule }
     if (Object.keys(body).join() !== 'receiptId' || !receipt.test(body.receiptId ?? '')) return response(400, { error: 'invalid_request' });
     schedule(runtime, body.receiptId);
     return response(202, { status: 'resume_requested', receiptId: body.receiptId });
-  } catch (error) { return response(503, { error: safeErrors.has(error?.message) ? error.message : 'incident_operation_unavailable' }); }
+  } catch (error) {
+    const code = safeErrors.has(error?.message) ? error.message : 'incident_operation_unavailable';
+    return response(503, { error: code, ...(code === 'incident_github_unconfigured' && githubSettings.has(error.setting)
+      ? { setting: error.setting } : {}) });
+  }
 }

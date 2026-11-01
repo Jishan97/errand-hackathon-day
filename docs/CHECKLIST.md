@@ -6,7 +6,7 @@ Reconciled on 1 November 2026. The immediate direction is a small live web found
 
 ## Done
 
-- [x] On `codex/composio-gmail`: main `38bbe72` integrated with a single-user Gmail operator console, managed OAuth, durable approval/worker/recovery, and 5 MiB image-attachment adapter. [Activation and live acceptance](GMAIL_OPERATOR.md) remain owner-run. General phone/chat and image generation are not implemented by this slice.
+- [x] On `codex/composio-gmail`: main `524f0d4` integrated with a single-user Gmail operator console, managed OAuth, durable approval/worker/recovery, and 5 MiB image-attachment adapter. [Activation and live acceptance](GMAIL_OPERATOR.md) remain owner-run. General phone/chat and image generation are not implemented by this slice.
 
 - [x] Public hackathon source repository, with work pushed to `main`.
 - [x] [Minimal web page live](https://errand-hackathon-day.vercel.app) without sign-in.

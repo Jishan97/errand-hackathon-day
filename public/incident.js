@@ -12,12 +12,26 @@ async function api(action, body) {
     headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}) });
   const result = await response.json();
+  const githubSettings = ['GITHUB_APP_ID', 'GITHUB_APP_CLIENT_ID', 'GITHUB_APP_CLIENT_SECRET',
+    'GITHUB_APP_PRIVATE_KEY_BASE64', 'GITHUB_APP_SLUG', 'GITHUB_APP_SESSION_SECRET', 'PUBLIC_BASE_URL', 'GITHUB_DEMO_REPO'];
+  if (!response.ok && result.error === 'incident_github_unconfigured' && githubSettings.includes(result.setting)) {
+    throw Error(`Check ${result.setting} in errand-hackathon-day Production: it is missing or has an invalid format. Save the existing correct value privately, then redeploy.`);
+  }
   const setupErrors = { incident_disabled: 'Enable ENABLE_FAST_INCIDENT_DEMO=true in main Vercel Production, then redeploy.',
+    invalid_request: 'The revision request was rejected by the route. Refresh this page to load the latest version.',
+    operator_required: 'The request did not include valid operator authorization. Enter the token privately and try again.',
     incident_unconfigured: 'An existing runtime setting or enable switch is missing or invalid. Follow the setup guide privately.',
+    incident_github_disabled: 'Set ENABLE_GITHUB_APP=true in errand-hackathon-day Production, then redeploy.',
+    incident_github_unconfigured: 'The existing GitHub App settings are incomplete or invalid in the main deployment. Review the App settings and PUBLIC_BASE_URL privately.',
+    incident_callback_disabled: 'Set ENABLE_LIVE_VOICE=true in errand-hackathon-day Production, then redeploy.',
+    incident_callback_unconfigured: 'The existing Twilio callback settings are incomplete or invalid in the main deployment. Review the account, token and configured test numbers privately.',
+    incident_model_unconfigured: 'Set OPENAI_AGENT_MODEL=gpt-6.1-sol in errand-hackathon-day Production, then redeploy.',
+    incident_openai_unconfigured: 'The main deployment is missing OPENAI_API_KEY. Add the existing key privately and redeploy.',
     fast_storage_unconfigured: 'Check the existing Supabase URL and secret key privately in the main deployment.',
     fast_storage_request_unconfirmed: 'Storage did not confirm this operation. Check the latest run and setup guide before retrying.',
     github_app_permissions_required: 'The selected GitHub App installation needs Checks and Actions read, plus Contents and Pull requests write.',
     github_app_not_connected: 'The existing GitHub App connection could not be found in the configured database.',
+    github_connection_unverified: 'The saved GitHub App connection does not match this demo repository. Its existing connection needs review.',
     incident_base_changed: 'The demo revision changed. Read and review its current revision again.',
     incident_ci_definition_changed: 'The demo regression workflow differs from the trusted version. Review it before arming.' };
   if (!response.ok) throw Error(setupErrors[result.error] ?? (result.error === 'incident_operation_unavailable'
@@ -25,7 +39,15 @@ async function api(action, body) {
     : result.error === 'operator_rejected' ? 'Operator token rejected.' : 'Request could not be completed.'));
   return result;
 }
-async function act(fn) { el('notice').textContent = ''; try { await fn(); } catch (e) { el('notice').textContent = e.message; } }
+async function act(fn) {
+  el('notice').textContent = '';
+  try { await fn(); }
+  catch (e) {
+    el('notice').textContent = e.message;
+    el('notice').focus();
+    el('notice').scrollIntoView({ block: 'center' });
+  }
+}
 async function refresh() {
   const data = await api('status');
   if (data.status !== 'found') { el('status').textContent = 'Waiting for an approved Sentry alert.'; return; }
@@ -36,9 +58,23 @@ async function refresh() {
   if (el('resume').disabled && timer) { clearInterval(timer); timer = null; }
 }
 el('prepare').onclick = () => act(async () => {
-  prepared = await api('prepare', {});
-  el('revision').textContent = `${prepared.repository} · ${prepared.baseSha}`;
-  el('arm').disabled = false;
+  const button = el('prepare');
+  button.disabled = true;
+  button.textContent = 'Checking demo revision…';
+  prepared = null;
+  el('arm').disabled = true;
+  el('revision').textContent = 'Checking access and reading the current GitHub revision…';
+  try {
+    prepared = await api('prepare', {});
+    el('revision').textContent = `${prepared.repository} · ${prepared.baseSha}`;
+    el('arm').disabled = false;
+  } catch (error) {
+    el('revision').textContent = 'Revision check failed. Approval remains disabled; see the message above.';
+    throw error;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Read current demo revision';
+  }
 });
 el('arm').onclick = () => act(async () => {
   el('arm').disabled = true;

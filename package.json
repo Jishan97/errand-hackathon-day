@@ -11,10 +11,14 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "check": "node scripts/check.js",
-    "test": "node --test test/*.test.js tests/*.test.js"
+    "test": "node --test test/*.test.js tests/*.test.js",
+    "dev:phone": "node --watch src/phone/start.js"
   },
   "dependencies": {
     "@vercel/functions": "3.6.1",
-    "openai": "7.47.0"
+    "express": "5.3.0",
+    "openai": "7.47.0",
+    "twilio": "6.2.0",
+    "ws": "8.22.0"
   }
 }

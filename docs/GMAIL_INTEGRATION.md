@@ -4,7 +4,7 @@ For dashboard setup, server settings, Agents API wiring and first live checks, s
 
 ## Scope and evidence
 
-Implemented on `codex/composio-gmail`, merged with main `38bbe72`, 1 November 2026. The target everyday lane remains **connect Gmail once, then ask by phone**. The now-implemented [operator demo](GMAIL_OPERATOR.md) supplies single-user authentication, durable Supabase storage/approvals, background execution and recovery for a web console. General caller admission, phone/chat Agents API execution, image generation and Gmail callbacks remain shared-core work.
+Implemented on `codex/composio-gmail`, merged with main `524f0d4`, 1 November 2026. The target everyday lane remains **connect Gmail once, then ask by phone**. The now-implemented [operator demo](GMAIL_OPERATOR.md) supplies single-user authentication, durable Supabase storage/approvals, background execution and recovery for a web console. Main now includes general phone chat/reminders. Binding Gmail ownership and approvals into that flow, image generation and Gmail callbacks remain shared-core integration work.
 
 The branch provides connections and operator pages, Composio-managed account linking, bounded Gmail reads, immutable text/image proposals, approved draft creation/send and byte-checked readback/reconciliation. Framework-neutral tool definitions remain available for the future phone/chat core. No independent general agent or new model choice is introduced.
 

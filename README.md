@@ -6,13 +6,15 @@ Built for the [DevDay Exchange London Community Hackathon](https://luma.com/dde-
 
 Production URL: [Errand on Vercel](https://errand-hackathon-day.vercel.app).
 
+General AI phone chat and approved reminders are now implemented using the existing MVP transport and database. See [phone activation and the short reminder rehearsal](docs/PHONE_REMINDERS.md); live phone acceptance on this deployment remains pending.
+
 ## This worktree: Gmail operator demo
 
-Teammate: start with [operator activation](docs/GMAIL_OPERATOR.md) and [Composio + Gmail setup](docs/COMPOSIO_GMAIL_SETUP.md). This branch integrates main `38bbe72` while keeping Gmail and Sentry workers independent.
+Teammate: start with [operator activation](docs/GMAIL_OPERATOR.md) and [Composio + Gmail setup](docs/COMPOSIO_GMAIL_SETUP.md). This branch integrates main `524f0d4` while keeping Gmail and Sentry workers independent.
 
 The everyday contribution now includes a [connections screen](public/connections.html) and a [Composio Gmail adapter and shared-core handoff](docs/GMAIL_INTEGRATION.md). Gmail alone is enabled for the demo; Calendar, Outlook, Drive, Notion, WhatsApp and Telegram remain disabled preview cards. Connect once in a browser, then use the phone service once the teammate's shared core is connected.
 
-Run `npm run check`, `npm test` and `npm start`, then open `/gmail.html`. The default credential-free preview reports setup pending. The implemented operator runtime uses the existing operator token, signed browser sessions, separate Gmail tables in Supabase, Vercel background execution and exact approvals. It supports read/search, draft/send, one saved PNG/JPEG/WebP image up to **5 MiB**, and content/attachment verification. The owner must apply `db/gmail.sql` and enable/configure the runtime. Live OAuth/mailbox acceptance is pending. The general phone/chat loop, image generation and Gmail callbacks remain shared-core work; the console is not a phone demo.
+Run `npm run check`, `npm test` and `npm start`, then open `/gmail.html`. The default credential-free preview reports setup pending. The implemented operator runtime uses the existing operator token, signed browser sessions, separate Gmail tables in Supabase, Vercel background execution and exact approvals. It supports read/search, draft/send, one saved PNG/JPEG/WebP image up to **5 MiB**, and content/attachment verification. The owner must apply `db/gmail.sql` and enable/configure the runtime. Live OAuth/mailbox acceptance is pending. Main now includes general phone chat/reminders; connecting Gmail to that caller/approval flow, image generation and Gmail callbacks remain shared-core work; the console is not a phone demo.
 
 ## What we are building
 

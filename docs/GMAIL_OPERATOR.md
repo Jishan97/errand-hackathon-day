@@ -1,6 +1,6 @@
 # Gmail operator demo on the shared app
 
-This branch merges main `38bbe72` and adds a single-user Gmail console at `/gmail.html`. It reuses the existing operator token, Supabase project, Vercel deployment and Composio project. Sentry production code and its tables are unchanged. This is a web operator demo, **not yet a phone/chat agent**. It does not require Sentry, GitHub, Twilio or OpenAI to be enabled.
+This branch merges main `524f0d4` and adds a single-user Gmail console at `/gmail.html`. It reuses the existing operator token, Supabase project, Vercel deployment and Composio project. Sentry production code and its tables are unchanged. This is a web operator demo, **not yet a phone/chat agent**. It does not require Sentry, GitHub, Twilio or OpenAI to be enabled.
 
 ## Owner activation
 
@@ -27,7 +27,7 @@ Changing a prepared message advances the same task's revision and invalidates th
 
 `createGmailRuntime(values)` supplies `connections`, `capability`, `store`, `auth`, `tools`, `bindTools(getAdmittedContext)`, `contextFor(proposalId)` and `run(proposalId)`. The existing incident runtime is not called. Gmail never registers tools on the incident coding agent or reuses the incident's fixed completion-call script.
 
-For a future phone/chat session, the shared core must authenticate the caller, choose trusted task/revision context, register `runtime.tools`, and dispatch function requests through `runtime.bindTools`. It must durably cache tool results and present the saved approval readback before recording consent. Sending remains a worker action. Replacing the single-user operator admission with caller identity is a separate integration step; do not trust caller ID or model-supplied ownership.
+Main now includes general phone conversation/reminders under `src/phone/`; these commits are included unchanged. Gmail is not registered in that phone runtime yet. The shared core must bind its authenticated caller to the connected Gmail owner, choose trusted task/revision context, register `runtime.tools`, and dispatch function requests through `runtime.bindTools`. It must durably cache tool results and present the saved approval readback before recording consent. Sending remains a worker action. Replacing the single-user operator admission with caller identity is a separate integration step; do not trust caller ID or model-supplied ownership.
 
 Images require a real generation/validation worker. Create a task via `store.newTask()`, generate and sanitize the image for the user's confirmed request, then call the internal `store.putImageAsset({ assetId, userId, taskId, filename, mimeType, description, bytes })`. Use that task and asset ID in the console's saved-image fields or the `gmail_prepare` tool. The runtime resolves the bytes privately from Supabase; no upload endpoint, arbitrary URL fetcher or image generator is introduced here. PNG/JPEG/WebP are supported up to 5 MiB; filenames must be safe ASCII and the image description must match the saved pixels. The upstream worker must decode and strip private metadata/trailing bytes.
 
@@ -43,3 +43,5 @@ node db/test-fast-incident.mjs /absolute/path/to/pglite/dist/index.js
 ```
 
 These are local SQL/provider-fixture tests. Owner-run Google consent, maximum-size proxy requests, real mailbox effects and deployment routing still need live acceptance. Do not claim a completed phone/image-generation flow from these checks.
+
+Recorded result after merging main `524f0d4`: **392 JavaScript tests passed on Node 24**, plus **20 separately executed PostgreSQL tests** (8 Gmail, 7 incident, 5 phone), syntax checks and `git diff --check`. SQL tests are not part of `npm test` or the Vercel build. PGlite serializes calls on one connection, so the claim tests prove one-use behavior rather than cross-connection lock contention. Opus 5.5 reviewed the operator implementation and fixes; no code blockers remained in its final review. Subsequent small review findings were fixed and the full suite rerun. The local browser showed the console's honest setup-pending state; deployment CSP and real sign-in remain owner-run acceptance.

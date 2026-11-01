@@ -1,7 +1,7 @@
 import { createFastStore, createFastRpc } from '../storage/fast-store.js';
 import { createIncidentRunner } from '../agents/incident-runner.js';
 import { createIncidentGithub } from '../assistant/incident-github.js';
-import { githubAppIsConfigured } from '../github/app-client.js';
+import { githubAppIsConfigured, githubAppConfigurationIssue } from '../github/app-client.js';
 import { createCompletionCaller, completionCallIsConfigured } from '../voice/completion-call.js';
 import { createFastWorker } from './fast-worker.js';
 
@@ -11,8 +11,16 @@ export function createIncidentRuntime(values) {
   if (values.ENABLE_FAST_INCIDENT_DEMO !== 'true') throw Error('incident_disabled');
   const config = { values, incidentDemoEnabled: true, githubAppEnabled: values.ENABLE_GITHUB_APP === 'true',
     liveVoiceEnabled: values.ENABLE_LIVE_VOICE === 'true' };
-  if (!config.githubAppEnabled || !githubAppIsConfigured(config) || !completionCallIsConfigured(config) ||
-      values.OPENAI_AGENT_MODEL !== 'gpt-6.1-sol' || !values.OPENAI_API_KEY) throw Error('incident_unconfigured');
+  if (!config.githubAppEnabled) throw Error('incident_github_disabled');
+  if (!githubAppIsConfigured(config)) {
+    const error = Error('incident_github_unconfigured');
+    error.setting = githubAppConfigurationIssue(config);
+    throw error;
+  }
+  if (!config.liveVoiceEnabled) throw Error('incident_callback_disabled');
+  if (!completionCallIsConfigured(config)) throw Error('incident_callback_unconfigured');
+  if (values.OPENAI_AGENT_MODEL !== 'gpt-6.1-sol') throw Error('incident_model_unconfigured');
+  if (!values.OPENAI_API_KEY) throw Error('incident_openai_unconfigured');
   const store = createFastStore({ rpc: createFastRpc({ url: values.SUPABASE_URL, secret: values.SUPABASE_SECRET_KEY }) });
   const github = createIncidentGithub({ config });
   const runner = createIncidentRunner({ config });

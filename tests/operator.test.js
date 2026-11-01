@@ -83,6 +83,27 @@ test('status and resume bind one receipt and reject malformed or unexpected quer
   }
 });
 
+test('Vercel dynamic route metadata preserves each operation and rejects conflicting parameters', async () => {
+  for (const [action, body, status] of [
+    ['prepare?action=prepare', {}, 200],
+    ['arm?action=arm', { baseSha, scope: REPAIR_SCOPE }, 200],
+    ['status?action=status', undefined, 200],
+    [`status?action=status&id=${receiptId}`, undefined, 200],
+    ['resume?action=resume', { receiptId }, 202],
+  ]) {
+    const f = fixture();
+    assert.equal((await handleOperator(request(action, { body }), f.options)).status, status, action);
+    if (action.includes('id=')) assert.ok(f.calls.some((call) => Array.isArray(call) && call[0] === 'status' && call[1] === receiptId));
+  }
+  for (const action of ['prepare?action=arm', 'prepare?action=', 'prepare?action=prepare&action=prepare',
+    'prepare?action=prepare&extra=1', 'status?action=status&id=bad',
+    `status?action=status&id=${receiptId}&id=${receiptId}`]) {
+    const f = fixture();
+    assert.equal((await handleOperator(request(action), f.options)).status, 400, action);
+    assert.equal(f.calls.includes('runtime'), false);
+  }
+});
+
 test('request method, content type, JSON shape and both body limits are enforced', async () => {
   const cases = [
     [request('arm', { method: 'GET' }), 405],
