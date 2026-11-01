@@ -6,11 +6,11 @@ create table errand.alert_recordings (
  base_sha text primary key check(base_sha ~ '^[a-f0-9]{40}$'),
  pr text not null check(pr ~ '^https://github[.]com/Jishan97/errand-agent-demo/pull/[1-9][0-9]*$'),
  pr_head text not null check(pr_head ~ '^[a-f0-9]{40}$'),
- remaining integer not null check(remaining between 0 and 3),
+ remaining integer not null check(remaining between 0 and 10),
  enabled_at timestamptz not null default clock_timestamp(),
- expires_at timestamptz not null default clock_timestamp()+interval '15 minutes',
+ expires_at timestamptz not null default clock_timestamp()+interval '60 minutes',
  last_accepted_at timestamptz,
- check(expires_at>enabled_at and expires_at<=enabled_at+interval '16 minutes')
+ check(expires_at>enabled_at and expires_at<=enabled_at+interval '61 minutes')
 );
 alter table errand.alert_recordings enable row level security;
 revoke all on errand.alert_recordings from public,anon,authenticated;

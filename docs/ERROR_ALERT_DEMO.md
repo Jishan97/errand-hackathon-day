@@ -23,10 +23,13 @@ The worker checks all four reviewed source hashes and the trusted GitHub workflo
 This adapts the existing MVP Sentry verifier, GitHub App adapter and Twilio transport. The prepared parser repair, narrowed PR-and-call orchestration, one-use storage and tests were written with Codex during the hackathon. Existing demo sources are retained in their existing repository; reviewed credential-free source copies are used only as test fixtures.
 
 
-## Up to three additional recording takes
+## Up to ten recording takes for one hour
 
-The owner authorized up to three additional Send-triggered calls for recording. Apply the additive `db/alert-recording.sql` after `db/alert-demo.sql`, then enable a server-only recording allowance bound to the reviewed base commit, existing draft PR and its exact head. The allowance expires after 15 minutes, permits at most three calls, and requires 60 seconds between accepted captures. It is never automatically renewed.
+The owner extended the recording allowance to ten additional Send-triggered calls for one hour. Apply the additive `db/alert-recording.sql` after `db/alert-demo.sql`, then enable a server-only recording allowance bound to the reviewed base commit, existing draft PR and its exact head. The allowance expires after one hour, permits at most ten calls, and requires 60 seconds between accepted captures. It is never automatically renewed.
 
 Each take requires a fresh signed Sentry `event_id` and `datetime` after the allowance was enabled. Sentry retries retain the capture ID and cannot spend another take. The worker revalidates the source, existing draft PR and both prepared file contents, then calls the configured test number. It creates no duplicate PR and performs no merge or deployment. Changed source/PR or an uncertain prior call stops further takes. The announcement says the draft PR is ready for review.
 
-Verification: 311 application tests, syntax checks and a real PostgreSQL-compatible recording test passed. The database test covers the three-take cap, old timestamps, wrong revision, duplicate delivery, cooldown, expiry, single claim, PR reuse and denied anonymous access. These tests do not place live calls; fresh recording takes still require the owner's Send click.
+Verification: 311 application tests, syntax checks and a real PostgreSQL-compatible recording test passed. The database test covers the ten-take cap, old timestamps, wrong revision, duplicate delivery, cooldown, expiry, single claim, PR reuse and denied anonymous access. These tests do not place live calls; fresh recording takes still require the owner's Send click.
+
+
+The 17:12 London extension updates only the existing recording table's quota/expiry constraints and its explicitly authorized allowance. The hosted migration is `extend_recording_takes_to_ten_for_one_hour`; existing installations require that upgrade, while the current `db/alert-recording.sql` contains the new defaults for a fresh schema. Capture deduplication history, cooldown and completed jobs are preserved. No application-runtime redeploy is needed for the allowance to take effect.
