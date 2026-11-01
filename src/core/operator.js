@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { REPAIR_SCOPE } from './fast-worker.js';
+import { ALERT_SCOPE } from './alert-demo.js';
 
 const sha = /^[a-f0-9]{40}$/;
 const receipt = /^[a-f0-9]{32}$/;
@@ -13,13 +14,14 @@ const safeErrors = new Set(['incident_disabled', 'incident_unconfigured', 'fast_
   'fast_storage_request_unconfirmed', 'github_app_permissions_required', 'github_app_not_connected',
   'github_connection_unverified', 'github_app_not_installed', 'github_app_authentication_failed',
   'github_app_private_key_invalid', 'github_personal_installation_required',
-  'incident_base_changed', 'incident_ci_definition_changed']);
+  'incident_base_changed', 'incident_ci_definition_changed', 'prepared_source_changed']);
 
 export async function handleOperator(request, { getToken, getRuntime, schedule }) {
   const url = new URL(request.url);
   const action = url.pathname.split('/').at(-1);
-  if (!['prepare', 'arm', 'status', 'resume'].includes(action)) return response(404, { error: 'not_found' });
-  if (request.method !== (action === 'status' ? 'GET' : 'POST')) return response(405, { error: 'method_not_allowed' });
+  if (!['prepare', 'arm', 'status', 'resume', 'prepare-alert', 'arm-alert', 'alert-status'].includes(action)) return response(404, { error: 'not_found' });
+  const isStatus = ['status', 'alert-status'].includes(action);
+  if (request.method !== (isStatus ? 'GET' : 'POST')) return response(405, { error: 'method_not_allowed' });
   const supplied = request.headers.get('authorization')?.match(/^Bearer ([A-Za-z0-9_-]{32,128})$/)?.[1];
   if (!supplied) return response(401, { error: 'operator_required' });
   const expected = getToken();
@@ -33,10 +35,10 @@ export async function handleOperator(request, { getToken, getRuntime, schedule }
     if (routeActions.length !== 1 || routeActions[0] !== action) return response(400, { error: 'invalid_request' });
     url.searchParams.delete('action');
   }
-  if ((action === 'status' && url.search && (url.searchParams.size !== 1 || !receipt.test(url.searchParams.get('id') ?? ''))) ||
-      (action !== 'status' && url.search)) return response(400, { error: 'invalid_request' });
+  if ((isStatus && url.search && (url.searchParams.size !== 1 || !receipt.test(url.searchParams.get('id') ?? ''))) ||
+      (!isStatus && url.search)) return response(400, { error: 'invalid_request' });
   let body = {};
-  if (action !== 'status') {
+  if (!isStatus) {
     if (request.headers.get('content-type')?.split(';')[0] !== 'application/json') return response(415, { error: 'json_required' });
     if (Number(request.headers.get('content-length') ?? 0) > 2048) return response(413, { error: 'body_too_large' });
     // Bound actual bytes too, including streamed bodies without Content-Length.
@@ -60,6 +62,15 @@ export async function handleOperator(request, { getToken, getRuntime, schedule }
   }
   try {
     const runtime = getRuntime();
+    if (action === 'alert-status') return response(200, await runtime.alertDemo.status());
+    if (action === 'prepare-alert') {
+      if (Object.keys(body).length) return response(400, { error: 'invalid_request' });
+      return response(200, await runtime.alertDemo.prepare());
+    }
+    if (action === 'arm-alert') {
+      if (Object.keys(body).sort().join() !== 'baseSha,scope' || !sha.test(body.baseSha ?? '') || body.scope !== ALERT_SCOPE) return response(400, { error: 'invalid_approval' });
+      return response(200, await runtime.alertDemo.arm(body.baseSha, body.scope));
+    }
     if (action === 'status') return response(200, await runtime.store.status(url.searchParams.get('id')));
     if (action === 'prepare') {
       if (Object.keys(body).length) return response(400, { error: 'invalid_request' });

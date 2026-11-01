@@ -13,6 +13,13 @@ export default {
         console.info(JSON.stringify({ event: 'sentry_alert_verified', ...receipt }));
         if (process.env.ENABLE_FAST_INCIDENT_DEMO !== 'true') return;
         const runtime = createIncidentRuntime(runtimeValues(process.env));
+        const alert = await runtime.alertDemo.accept(event);
+        if (['queued', 'duplicate'].includes(alert.status)) {
+          if (alert.status === 'queued') waitUntil(runtime.alertDemo.run(event.eventId).catch(() => {
+            console.info(JSON.stringify({ event: 'alert_demo_requires_review' }));
+          }));
+          return alert;
+        }
         const accepted = await runtime.store.accept(event);
         if (['queued', 'duplicate'].includes(accepted.status)) scheduleIncident(runtime, event.eventId, waitUntil);
         return accepted;

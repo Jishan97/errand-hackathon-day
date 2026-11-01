@@ -1,0 +1,18 @@
+[
+  {
+    "path": "api/upload.js",
+    "content": "import * as Sentry from \"@sentry/node\";\nimport { parseUpload } from \"../lib/upload-parser.js\";\n\nSentry.init({ dsn: process.env.SENTRY_DSN, release: process.env.VERCEL_GIT_COMMIT_SHA,\n  sendDefaultPii: false, defaultIntegrations: false, tracesSampleRate: 0,\n  beforeSend(event) {\n    // Fictional demo only: never transmit upload contents, caller or request data.\n    delete event.request; delete event.user; delete event.breadcrumbs; delete event.extra;\n    return event;\n  },\n});\n\nexport default async function handler(request, response) {\n  response.setHeader(\"Cache-Control\", \"no-store\");\n  const commit = process.env.VERCEL_GIT_COMMIT_SHA || null;\n  if (request.method !== \"POST\") return response.status(405).json({ error: \"post_required\", commit });\n  // A fixture selector deliberately replaces real uploads for this public demo.\n  // Real personal files must not be sent to Sentry or the coding environment.\n  const body = request.body;\n  if (!body || Array.isArray(body) || typeof body !== \"object\" || Object.keys(body).length !== 1 || body.sample !== \"plants\") return response.status(400).json({ error: \"fictional_sample_required\", commit });\n  try {\n    const result = parseUpload(\"name,quantity\\nfern,2\\nrose,1\\n\");\n    return response.status(200).json({ ...result, sample: \"plants\", commit });\n  } catch {\n    const eventId = Sentry.captureException(new Error(\"Fictional plant upload failed\"), { tags: { errand_demo: \"upload_lf_v1\" }, fingerprint: [\"errand-upload-lf-v1\"] });\n    const captured = await Sentry.flush(1500);\n    return response.status(500).json({ error: \"sample_upload_failed\", captured, eventId, commit });\n  }\n}\n"
+  },
+  {
+    "path": "lib/upload-parser.js",
+    "content": "// Deliberate hackathon fixture: LF-only CSV is currently rejected.\nexport function parseUpload(csv) {\n  const lines = csv.trim().split(\"\\r\\n\");\n  if (lines.shift() !== \"name,quantity\" || lines.length === 0) throw Error(\"sample_upload_line_endings\");\n  const quantities = lines.map((line) => {\n    const [name, quantity, extra] = line.split(\",\").map((part) => part.trim());\n    if (!name || extra !== undefined || !/^[1-9]\\d{0,3}$/.test(quantity ?? \"\")) throw Error(\"sample_upload_invalid_row\");\n    return Number(quantity);\n  });\n  return { rows: quantities.length, totalQuantity: quantities.reduce((a, b) => a + b, 0) };\n}\n"
+  },
+  {
+    "path": "tests/upload-parser.test.js",
+    "content": "import test from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { parseUpload } from \"../lib/upload-parser.js\";\ntest(\"sample CRLF CSV parses\", () => assert.deepEqual(parseUpload(\"name,quantity\\r\\nfern,2\\r\\nrose,1\\r\\n\"), { rows: 2, totalQuantity: 3 }));\n"
+  },
+  {
+    "path": "package.json",
+    "content": "{\"name\":\"errand-agent-demo\",\"private\":true,\"type\":\"module\",\"engines\":{\"node\":\"24.x\"},\"scripts\":{\"test\":\"node --test\"},\"dependencies\":{\"@sentry/node\":\"11.10.0\"}}\n"
+  }
+]

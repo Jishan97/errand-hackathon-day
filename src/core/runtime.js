@@ -3,8 +3,9 @@ import { createIncidentRunner } from '../agents/incident-runner.js';
 import { createIncidentGithub } from '../assistant/incident-github.js';
 import { githubAppIsConfigured, githubAppConfigurationIssue } from '../github/app-client.js';
 import { createIncidentInstallationCredential } from '../github/incident-credential.js';
-import { createCompletionCaller, completionCallIsConfigured } from '../voice/completion-call.js';
+import { createCompletionCaller, createErrorAlertCaller, completionCallIsConfigured } from '../voice/completion-call.js';
 import { createFastWorker } from './fast-worker.js';
+import { createAlertDemo } from './alert-demo.js';
 
 // Only deployed entry points call this after signature/operator checks. Tests
 // pass synthetic values; no private file is loaded anywhere in this app.
@@ -22,13 +23,15 @@ export function createIncidentRuntime(values) {
   if (!completionCallIsConfigured(config)) throw Error('incident_callback_unconfigured');
   if (values.OPENAI_AGENT_MODEL !== 'gpt-6.1-sol') throw Error('incident_model_unconfigured');
   if (!values.OPENAI_API_KEY) throw Error('incident_openai_unconfigured');
-  const store = createFastStore({ rpc: createFastRpc({ url: values.SUPABASE_URL, secret: values.SUPABASE_SECRET_KEY }) });
+  const rpc = createFastRpc({ url: values.SUPABASE_URL, secret: values.SUPABASE_SECRET_KEY });
+  const store = createFastStore({ rpc });
   const github = createIncidentGithub({ config, credential: createIncidentInstallationCredential({ config }) });
   const runner = createIncidentRunner({ config });
   const caller = createCompletionCaller({ config });
   const worker = createFastWorker({ store, github, runner, caller,
     logger: (entry) => console.info(JSON.stringify(entry)) });
-  return { store, github, worker };
+  const alertDemo = createAlertDemo({ rpc, github, caller: createErrorAlertCaller({ config }) });
+  return { store, github, worker, alertDemo };
 }
 
 export function runtimeValues(env) {

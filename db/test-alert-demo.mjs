@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+const {PGlite}=await import(pathToFileURL(process.argv[2]).href);
+const db=new PGlite();
+try {
+ await db.exec('create role anon; create role authenticated; create role service_role bypassrls; create schema errand; grant usage on schema errand to service_role;');
+ await db.exec(await readFile(new URL('./alert-demo.sql',import.meta.url),'utf8'));
+ const rpc=async(name,args=[]) => (await db.query(`select public.errand_alert_${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) as result`,args)).rows[0].result;
+ const sha='b'.repeat(40),id='c'.repeat(32),pr='https://github.com/Jishan97/errand-agent-demo/pull/123';
+ assert.equal((await rpc('accept',[id,sha])).status,'unarmed');
+ await rpc('arm',[sha]);
+ assert.equal((await rpc('accept',[id,'d'.repeat(40)])).status,'unarmed');
+ assert.equal((await rpc('accept',[id,sha])).status,'queued');
+ assert.equal((await rpc('accept',[id,sha])).status,'duplicate');
+ assert.equal((await rpc('claim',[id])).status,'claimed');
+ assert.equal((await rpc('claim',[id])).status,'not_claimed');
+ await assert.rejects(rpc('record',[id,'completed',pr]),/invalid_alert_transition/);
+ await assert.rejects(rpc('record',[id,'calling',null]),/pr_required/);
+ await rpc('record',[id,'calling',pr]);
+ await assert.rejects(rpc('record',[id,'completed',pr+'4']),/pr_changed/);
+ await rpc('record',[id,'completed',pr]);
+ assert.equal((await rpc('status')).callbackStatus,'submitted_not_verified');
+ await assert.rejects(rpc('arm',[sha]),/revision_already_used/);
+ assert.equal((await rpc('claim',[id])).status,'not_claimed');
+ await db.exec('set role anon;');
+ await assert.rejects(rpc('status'),/permission denied/);
+ await db.exec('reset role; set role service_role;');
+ assert.equal((await rpc('status')).phase,'completed');
+ console.log('PASS: real SQL revision, approval, deduplication, single claim, transition and role boundaries');
+} finally {await db.close();}

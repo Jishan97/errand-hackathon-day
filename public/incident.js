@@ -1,9 +1,9 @@
 const el = (id) => document.getElementById(id);
 let prepared = null, receiptId = null, timer = null;
-const labels = { repair_start: 'Starting the approved coding run', repair_poll: 'Reproducing and fixing the bug',
+const labels = { waiting: 'Ready for one Sentry alert', queued: 'Alert received', opening_pr: 'Opening the prepared draft PR', calling: 'Calling about the error and draft PR', repair_start: 'Starting the approved coding run', repair_poll: 'Reproducing and fixing the bug',
   cleanup: 'Verifying coding evidence', create_pr: 'Opening the repair PR', ci_wait: 'Waiting for GitHub checks',
   merge: 'Merging the checked revision', deployment_wait: 'Waiting for the live commit and upload replay',
-  callback: 'Submitting your completion call', completed: 'Live repair verified · callback submitted',
+  callback: 'Submitting your completion call', completed: 'Draft PR opened · error call submitted',
   failed: 'Stopped: repair completion is not verified', unknown: 'Stopped: an external action is unconfirmed; do not retry it' };
 async function api(action, body) {
   const token = el('operator').value;
@@ -53,13 +53,13 @@ async function act(fn) {
   }
 }
 async function refresh() {
-  const data = await api('status');
+  const data = await api('alert-status');
   if (data.status !== 'found') { el('status').textContent = 'Waiting for an approved Sentry alert.'; return; }
   receiptId = data.receiptId;
   el('status').textContent = labels[data.phase] ?? data.phase;
   el('details').textContent = JSON.stringify(data, null, 2);
-  el('resume').disabled = ['completed', 'failed', 'unknown'].includes(data.phase);
-  if (el('resume').disabled && timer) { clearInterval(timer); timer = null; }
+  el('resume').disabled = true;
+  if (['completed', 'failed', 'unknown'].includes(data.phase) && timer) { clearInterval(timer); timer = null; }
 }
 el('prepare').onclick = () => act(async () => {
   const button = el('prepare');
@@ -69,7 +69,7 @@ el('prepare').onclick = () => act(async () => {
   el('arm').disabled = true;
   el('revision').textContent = 'Checking access and reading the current GitHub revision…';
   try {
-    prepared = await api('prepare', {});
+    prepared = await api('prepare-alert', {});
     el('revision').textContent = `${prepared.repository} · ${prepared.baseSha}`;
     el('arm').disabled = false;
   } catch (error) {
@@ -82,7 +82,7 @@ el('prepare').onclick = () => act(async () => {
 });
 el('arm').onclick = () => act(async () => {
   el('arm').disabled = true;
-  const result = await api('arm', { baseSha: prepared.baseSha, scope: prepared.scope });
+  const result = await api('arm-alert', { baseSha: prepared.baseSha, scope: prepared.scope });
   el('approval').textContent = `One run approved. Expires: ${new Date(result.expiresAt).toLocaleTimeString()}. Trigger the sample now.`;
   if (timer) clearInterval(timer);
   timer = setInterval(() => act(refresh), 4000);

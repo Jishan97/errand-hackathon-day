@@ -1,5 +1,7 @@
 # Errand — Hackathon Day
 
+**Submission demo:** [Error notification and prepared draft PR](docs/ERROR_ALERT_DEMO.md) connects the real Sentry error to a draft PR and an error-notification call. Codex prepared and tested the known parser fix during the event; this path does not merge or deploy. Live acceptance is tracked separately.
+
 Errand is a phone-based assistant that carries out approved work between calls and calls back with a verified result.
 
 Built for the [DevDay Exchange London Community Hackathon](https://luma.com/dde-ldn-hack) on Sunday, 1 November 2026.

@@ -62,10 +62,10 @@ async function boundedJson(response) {
   }
 }
 
-export function createCompletionCaller({ config, fetcher = fetch }) {
+function createCaller({ config, fetcher = fetch }, verifyEvidence, message) {
   return Object.freeze({
     async call(evidence) {
-      if (!verified(evidence)) throw failure('callback_evidence_required');
+      if (!verifyEvidence(evidence)) throw failure('callback_evidence_required');
       if (!completionCallIsConfigured(config) || typeof fetcher !== 'function') {
         throw failure('callback_disabled_or_unconfigured');
       }
@@ -74,7 +74,7 @@ export function createCompletionCaller({ config, fetcher = fetch }) {
       const parameters = new URLSearchParams({
         From: values.TWILIO_FROM_NUMBER,
         To: values.TEST_RESIDENT_NUMBER,
-        Twiml: twiml,
+        Twiml: message,
         Timeout: '20',
         TimeLimit: '45',
         Record: 'false',
@@ -111,4 +111,17 @@ export function createCompletionCaller({ config, fetcher = fetch }) {
       }
     },
   });
+}
+
+export function createCompletionCaller(options) { return createCaller(options, verified, twiml); }
+
+export function createErrorAlertCaller(options) {
+  const verify = evidence => evidence?.signedAlert === true && commitPattern.test(evidence?.baseSha ?? '') &&
+    /^https:\/\/github\.com\/Jishan97\/errand-agent-demo\/pull\/[1-9]\d*$/.test(evidence?.pullRequest ?? '');
+  const message = '<?xml version="1.0" encoding="UTF-8"?><Response><Say>' +
+    'This is Errand, an AI assistant. Sentry reported that the Common Ground sample attachment failed. ' +
+    'I opened a draft pull request with the prepared line ending fix and regression tests. ' +
+    'Please review it on GitHub. The fix has not been merged or deployed. Goodbye.' +
+    '</Say><Hangup/></Response>';
+  return createCaller(options, verify, message);
 }
