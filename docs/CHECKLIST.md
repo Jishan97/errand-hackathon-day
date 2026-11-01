@@ -12,7 +12,7 @@ Reconciled on 1 November 2026. The immediate direction is a small live web found
 - [x] Initial collaborator brief, architecture boundaries and staged plan.
 - [x] UI-only instructions written for the existing developer demo and published as a single-file draft PR in its private repository. The PR is not merged yet.
 - [x] Existing demo source stays under MVP; its repository and deployment connections remain in place.
-- [x] Minimal signed Sentry receiver and 13 credential-free tests implemented, including real local HTTP and Node.js 24 execution. It returns validation-only receipts; real signed production delivery remains pending.
+- [x] Minimal signed Sentry receiver deployed to production in `77ab8f4`, with 13 credential-free tests passing on Node.js 24 and 26. Anonymous production method/authentication/content-type/query checks pass and static assets still match source. It returns validation-only receipts; real signed Sentry delivery remains pending.
 
 ## Existing setup to reuse
 
@@ -22,7 +22,7 @@ Reconciled on 1 November 2026. The immediate direction is a small live web found
 | OpenAI / GPT Live | Existing API/voice setup is owner-confirmed; preparation records include provider and real-call evidence. No replacement keys are requested. | Bring over the minimal voice/reasoning/coding integration and run its relevant acceptance check. |
 | Twilio | Existing incoming/outgoing phone preparation is recorded. | Connect the selected conversation/callback path to the new app. |
 | Supabase | Existing service setup and preparation contracts are available. | Reuse only the task/approval/job storage needed for the selected slice. |
-| Sentry | First controlled capture passes; internal integration creation is verified and the owner reports saving updated backend credentials. Minimal receiver and offline tests are implemented. Replacement values/private settings were not inspected. | Verify the production receiver, then prove real signed delivery. Durable incident processing, findings call and repair flow remain disconnected. |
+| Sentry | First controlled capture passes; internal integration creation is verified and the owner reports saving updated backend credentials. Receiver deployed in 77ab8f4; offline tests and anonymous production rejection/routing checks pass. Replacement values/private settings were not inspected. | Connect the matching Sentry Issue Alert and prove real signed delivery. Durable incident processing, findings call and repair flow remain disconnected. |
 
 Existing account readiness is different from end-to-end acceptance. The hackathon app has static files plus a validation-only [signed webhook handler](SENTRY_WEBHOOK.md). It has no provider clients, persistent incident intake, phone bridge, worker, coding action or reminder scheduler. Do not re-provision existing integrations or reopen old setup failures without new evidence.
 

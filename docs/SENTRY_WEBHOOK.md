@@ -62,6 +62,8 @@ The agent does not read deployment secrets, private dotenv files, or run credent
 
 ## Reuse and sources
 
+Release evidence: [77ab8f4](https://github.com/Jishan97/errand-hackathon-day/commit/77ab8f4b9dd4f5998f28661486fecda30e3a807a) reached READY in production on 1 November 2026. All 13 tests pass on Node 24.22.2 and Node 26.7.0. Anonymous production checks returned GET/HEAD 405, missing/malformed-signature POST 401, non-JSON 415 and query-string 400; home/CSS/static health each returned 200 with bytes matching source. These probes do not access deployment configuration. Real signed Sentry delivery and private-setting authentication remain unverified.
+
 The HMAC, project/tag/release binding, normalized incident fields and stable project/issue/release digest are adapted from Errand's pre-event MVP verifier and raw-body HTTP intake. The Vercel Web Request adapter, bounded streaming reader, validation-only receipts and tests were added during the hackathon. No third-party runtime dependency was introduced.
 
 Current official references checked for this implementation: [Sentry webhook signing](https://docs.sentry.io/integrations/integration-platform/webhooks/), [Issue Alert payload](https://docs.sentry.io/integrations/integration-platform/webhooks/issue-alerts/), [Sentry Alert Action setup](https://www.sentry.help/en/articles/17443113-how-can-i-enable-webhooks-as-an-alert-action-in-sentry), [Vercel Functions quickstart](https://vercel.com/docs/functions/quickstart).
