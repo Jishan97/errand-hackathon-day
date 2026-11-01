@@ -1,6 +1,6 @@
 # Errand — Hackathon Day
 
-**Submission demo:** [Error notification and prepared draft PR](docs/ERROR_ALERT_DEMO.md) connects the real Sentry error to a draft PR and an error-notification call. Codex prepared and tested the known parser fix during the event; this path does not merge or deploy. Live verified: signed alert → draft PR with passing regression check → accepted error-call submission. Heard-call confirmation is pending.
+**Submission demo:** [Error notification and prepared draft PR](docs/ERROR_ALERT_DEMO.md) connects the real Sentry error to a draft PR and an error-notification call. Codex prepared and tested the known parser fix during the event; this path does not merge or deploy. Live accepted: signed alert → prepared draft PR with passing regression check → error/PR call heard by the owner. The later closed-PR recovery was verified after the event deadline; see the guide for chronology. The fix has not been merged or deployed.
 
 Errand is a phone-based assistant that carries out approved work between calls and calls back with a verified result.
 
