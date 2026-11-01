@@ -1,5 +1,7 @@
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
+import { Readable } from 'node:stream';
+import { handleSentryWebhook } from './integrations/sentry-webhook.js';
 
 // Explicit public-file allowlist; no private configuration or providers are loaded.
 const home = readFileSync(new URL('../public/index.html', import.meta.url));
@@ -13,24 +15,38 @@ const pages = new Map([
   ['/health.json', { type: 'application/json; charset=utf-8', body: health }],
 ]);
 
-export function createApp() {
-  return createServer((request, response) => {
+export function createApp({ sentryOptions } = {}) {
+  return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json; charset=utf-8');
     response.setHeader('Cache-Control', 'no-store');
 
+    let url;
+    let pathname;
+    try {
+      url = new URL(request.url, 'http://localhost');
+      pathname = url.pathname;
+    } catch {
+      response.writeHead(400);
+      response.end(JSON.stringify({ error: 'invalid_url' }));
+      return;
+    }
+    if (pathname === '/api/webhooks/sentry') {
+      try {
+        const incoming = new Request(url, { method: request.method, headers: request.headers,
+          ...(!['GET', 'HEAD'].includes(request.method) ? { body: Readable.toWeb(request), duplex: 'half' } : {}) });
+        const result = await handleSentryWebhook(incoming, sentryOptions);
+        response.writeHead(result.status, Object.fromEntries(result.headers));
+        response.end(Buffer.from(await result.arrayBuffer()));
+      } catch {
+        response.writeHead(503);
+        response.end(JSON.stringify({ error: 'sentry_delivery_unconfirmed' }));
+      }
+      return;
+    }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       response.setHeader('Allow', 'GET, HEAD');
       response.writeHead(405);
       response.end(JSON.stringify({ error: 'method_not_allowed' }));
-      return;
-    }
-
-    let pathname;
-    try {
-      pathname = new URL(request.url, 'http://localhost').pathname;
-    } catch {
-      response.writeHead(400);
-      response.end(JSON.stringify({ error: 'invalid_url' }));
       return;
     }
     const page = pages.get(pathname);

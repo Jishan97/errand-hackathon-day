@@ -2,11 +2,11 @@
 
 ## Immediate next step — 1 November 2026
 
-Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live. The owner clarified that Sentry has not been created; existing GitHub/OpenAI/voice setup should be reused, with actual new-app wiring and acceptance still pending.
+Follow the [reconciled checklist](CHECKLIST.md) for current status and owners. The web foundation/pipeline is live, Sentry capture in the separate demo has passed, and the owner reports saving updated main-backend credentials. Reuse existing service setup. The owner now authorizes one small signed-webhook receiver, tests and deployment; larger provider wiring remains pending.
 
 The owner asked to reduce the immediate scope: get a minimal web page live with a Vercel pipeline, then slowly select useful work from MVP. The two-demo direction remains; the larger roadmap below is future work. Keep existing demos under MVP with their current GitHub/deployment links.
 
-This step adds only a small public page, credential-free local preview, static health output and Git-driven deployment. No voice, storage, coding worker or reminder integration is brought across yet. See [deployment and verification](DEPLOYMENT.md).
+The current slice adds the [signed Sentry verifier](SENTRY_WEBHOOK.md), a Vercel function, bounded raw-body handling and offline tests, reusing the MVP's HMAC/demo filters. It returns a verification receipt marked processing not connected. No voice, storage, coding worker or reminder integration is brought across. See [deployment and verification](DEPLOYMENT.md).
 
 ## Decision — 1 November 2026
 
@@ -49,7 +49,8 @@ Retain the established Node/JavaScript approach and existing OpenAI, Twilio, Sup
 | Slice | Concrete result | Status |
 | --- | --- | --- |
 | 0. Shared starting point | Collaborator brief, module layout and credential-free HTTP shell | Implemented in this scaffold |
-| 0a. Minimal web delivery | Small public page, Vercel build/check and main-branch deployments | Current step |
+| 0a. Minimal web delivery | Small public page, Vercel build/check and main-branch deployments | Live and verified |
+| 0b. Signed Sentry delivery boundary | Reused verifier, validation-only receipt, offline tests and deployment | Implemented; real signed delivery acceptance pending |
 | 1. Shared phone/task spine | Reuse reviewed voice, context, approval and durable-work boundaries from preparation | Planned |
 | 2. Developer investigation | One selected incident produces useful findings from real evidence | Planned; primary focus |
 | 3. Developer action and result | Scoped approval, actual coding/tests/PR, allowed delivery and replay-backed callback | Planned |

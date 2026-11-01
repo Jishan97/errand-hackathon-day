@@ -1,6 +1,6 @@
 # One shared assistant, two scenarios
 
-This diagram is the target architecture. The implemented foundation is a small static web page and local server; module directories currently contain briefs. Vercel publishes `public/` after the build check. No backend service runs in production yet.
+This diagram is the target architecture. The implemented foundation is a small static web page/local server plus one validation-only signed Sentry receiver. Vercel publishes `public/` and the API function after syntax/tests pass. The larger conversation, storage and execution flow remains planned.
 
 ```mermaid
 flowchart LR
@@ -20,10 +20,11 @@ flowchart LR
 | Location | Responsibility | Present now |
 | --- | --- | --- |
 | `public/`, `vercel.json` | Minimal public web page and Git-driven deployment | Static HTML/CSS and honest static health JSON |
-| `src/app.js`, `src/server.js` | Local preview of the same allowlisted public files | Web page, stylesheet, health and 404/405 responses |
+| `src/app.js`, `src/server.js` | Local preview and shared webhook adapter | Public files, health, webhook method/authentication handling and 404/405 responses |
+| `api/webhooks/sentry.js`, `src/integrations/sentry-webhook.js` | Verify the bounded signed demo alert | HMAC, project/tag/release checks and a receipt marked processing not connected; no persistence/worker |
 | [core](../src/core/README.md) | General conversation/context, exact approvals, task/job contracts and background execution | Brief only |
 | [voice](../src/voice/README.md) | Incoming/outgoing phone transport, caller binding, proactive callback opening | Brief only |
-| [integrations](../src/integrations/README.md) | Bounded adapters for existing OpenAI, storage, phone, repository, error and deployment services | Brief only |
+| [integrations](../src/integrations/README.md) | Bounded adapters for existing OpenAI, storage, phone, repository, error and deployment services | Sentry verifier implemented; other adapters planned |
 | [developer demo](../src/demos/developer/README.md) | Incident-specific input, actions and evidence | Brief only; primary journey |
 | [everyday-help demo](../src/demos/everyday-help/README.md) | Older-adult help/reminder example on the same core | Outline only |
 
@@ -37,6 +38,6 @@ The shared worker chooses registered scenario tools. The scenario supplies capab
 
 ## Implementation boundary
 
-The local server uses Node built-ins so collaborators can run it immediately without credentials or dependency setup. Production currently serves static files only. This does not replace the established service architecture. Introduce reviewed dependencies and backend deployment adapters only with the slice that needs them. Real provider clients, storage schema, scheduler and application interactions remain future work.
+The local server and verifier use Node built-ins. Production serves static files plus the Node Web Request webhook function. The function consumes only the existing Client Secret/project ID, performs no provider requests and returns a validation receipt. Durable storage/deduplication must be connected before receipt verification can become queued work. Real provider clients, storage schema, scheduler and application interactions remain future work. See [receiver boundaries](SENTRY_WEBHOOK.md).
 
 All service credentials stay outside the agent-visible coding workspace and public repository. Reuse existing service setup; preserve caller/repository/action authorization. Local health is process evidence only.

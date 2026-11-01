@@ -21,39 +21,42 @@ The assistant should remain conversational. An existing incident or reminder is 
 
 Read the [current checklist](docs/CHECKLIST.md), [delivery plan](docs/PLAN.md), [architecture and module boundaries](docs/ARCHITECTURE.md), [contribution guide](CONTRIBUTING.md), and [agent working rules](AGENTS.md). The developer [demo brief](src/demos/developer/README.md) describes the main journey; the everyday-help [outline](src/demos/everyday-help/README.md) deliberately leaves its detailed scenario open.
 
-The current step is deliberately small: a public web page and Vercel deployments from GitHub, then selective reuse of MVP work. See [deployment and local setup](docs/DEPLOYMENT.md). Voice, AI, storage, incident handling, coding, reminders and callbacks are not connected yet. Earlier preparation results do not establish that either demo works in this repository.
+The current implementation is deliberately small: a public web page, Vercel deployments from GitHub and a [signed Sentry alert receiver](docs/SENTRY_WEBHOOK.md) adapted from MVP work. Matching alerts return a validation receipt explicitly marked `processing: not_connected`. Voice, AI, storage, investigation, coding, reminders and callbacks are not connected yet. Earlier preparation results do not establish that either full demo works in this repository.
 
 ## Run the scaffold
 
-Use Node.js 24; `.nvmrc` selects that version. There are no third-party dependencies or required credentials at this stage.
+Use Node.js 24; `.nvmrc` selects that version. There are no third-party dependencies. Local preview and offline tests need no credentials; deployed webhook verification uses the owner's existing Sentry configuration.
 
 ```sh
 git clone https://github.com/Jishan97/errand-hackathon-day.git
 cd errand-hackathon-day
 npm run check
+npm test
 npm run dev
 ```
 
 Open [the local web page](http://127.0.0.1:3000/) or [health endpoint](http://127.0.0.1:3000/healthz). The page describes the two planned demos; health returns JSON reporting `servicesConnected: false`. It does not test any integration. Stop with Ctrl-C. `npm start` runs the same local server without watch mode.
 
-These commands do not load dotenv files or call external services. Vercel serves only the explicit `public/` output; the Node server is for local development. The production build runs `npm run check` before publishing.
+These commands do not load dotenv files or call external services. Vercel publishes `public/` alongside `api/webhooks/sentry.js`; the local server adapts requests to the same verifier with empty configuration by default. The production build runs syntax checks and all offline tests before publishing.
 
 ## Project layout
 
 ```text
 docs/                     Delivery plan and architecture
 public/                   Small web page, stylesheet and static health JSON
-vercel.json               Static output, health route and build check
-src/app.js                Local server for the same public files
+vercel.json               Static output, function settings, health route and checks
+api/webhooks/sentry.js     Vercel Web Request entry point
+src/app.js                Local public-file server and webhook adapter
 src/server.js             Loopback-only local entry point
 src/core/                 Shared conversation/task/approval/worker boundaries
 src/voice/                Future phone transport and callback adapter
-src/integrations/         Future wrappers around existing services
+src/integrations/         Signed Sentry verifier and future service wrappers
+tests/                    Credential-free webhook and HTTP regression checks
 src/demos/developer/      Developer scenario brief
 src/demos/everyday-help/  Older-adult phone-help scenario outline
 ```
 
-The module directories contain briefs rather than fake implementations. Build one small, reviewable slice at a time, with the developer demo receiving most of the effort.
+The remaining module directories contain briefs. Build one small, reviewable slice at a time, with the developer demo receiving most of the effort.
 
 ## Repository scope
 
@@ -63,7 +66,7 @@ Reuse the existing OpenAI, GitHub, Vercel, Supabase, Twilio and other service se
 
 ## Existing work and credits
 
-Errand's concept exploration, integration experiments and preparation work predate the hackathon build. That preparation is not included in this initial commit. Any code, templates or assets reused in the application will be credited here, with the work completed during the event identified separately.
+Errand's concept exploration, integration experiments and preparation work predate the hackathon build. The signed receiver reuses the pre-event MVP's HMAC verifier, demo-event filters and incident digest. The Vercel adapter, bounded streaming input, validation-only response and regression tests were added during the event. Codex adapted that code and executed the tests. No other preparation implementation, external assets or templates were copied in this slice.
 
 ## Configuration privacy
 

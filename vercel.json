@@ -2,8 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "",
-  "buildCommand": "npm run check",
+  "buildCommand": "npm run check && npm test",
   "outputDirectory": "public",
+  "functions": {
+    "api/webhooks/sentry.js": { "maxDuration": 10 }
+  },
   "rewrites": [
     { "source": "/healthz", "destination": "/health.json" }
   ],
