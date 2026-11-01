@@ -19,11 +19,11 @@ The assistant should remain conversational. An existing incident or reminder is 
 
 Read the [delivery plan](docs/PLAN.md), [architecture and module boundaries](docs/ARCHITECTURE.md), [contribution guide](CONTRIBUTING.md), and [agent working rules](AGENTS.md). The developer [demo brief](src/demos/developer/README.md) describes the main journey; the everyday-help [outline](src/demos/everyday-help/README.md) deliberately leaves its detailed scenario open.
 
-This commit is the initial structure. It includes a credential-free Node HTTP shell and documented module locations. Voice, AI, storage, incident handling, coding, reminders, GitHub actions and callbacks are not connected yet. Earlier preparation results do not establish that either demo works in this repository.
+The current step is deliberately small: a public web page and Vercel deployments from GitHub, then selective reuse of MVP work. See [deployment and local setup](docs/DEPLOYMENT.md). Voice, AI, storage, incident handling, coding, reminders and callbacks are not connected yet. Earlier preparation results do not establish that either demo works in this repository.
 
 ## Run the scaffold
 
-Use Node.js 24 or later; `.nvmrc` selects Node 24. There are no third-party dependencies or required credentials at this stage.
+Use Node.js 24; `.nvmrc` selects that version. There are no third-party dependencies or required credentials at this stage.
 
 ```sh
 git clone https://github.com/Jishan97/errand-hackathon-day.git
@@ -32,15 +32,17 @@ npm run check
 npm run dev
 ```
 
-Open [the local overview](http://127.0.0.1:3000/) or [health endpoint](http://127.0.0.1:3000/healthz). Both return JSON. `GET /healthz` confirms only that the scaffold responds; it does not test any integration. Stop with Ctrl-C. `npm start` runs the same shell without watch mode.
+Open [the local web page](http://127.0.0.1:3000/) or [health endpoint](http://127.0.0.1:3000/healthz). The page describes the two planned demos; health returns JSON reporting `servicesConnected: false`. It does not test any integration. Stop with Ctrl-C. `npm start` runs the same local server without watch mode.
 
-These commands do not load dotenv files or call external services. No deployment is configured by this commit.
+These commands do not load dotenv files or call external services. Vercel serves only the explicit `public/` output; the Node server is for local development. The production build runs `npm run check` before publishing.
 
 ## Project layout
 
 ```text
 docs/                     Delivery plan and architecture
-src/app.js                HTTP shell: overview, health and honest 404s
+public/                   Small web page, stylesheet and static health JSON
+vercel.json               Static output, health route and build check
+src/app.js                Local server for the same public files
 src/server.js             Loopback-only local entry point
 src/core/                 Shared conversation/task/approval/worker boundaries
 src/voice/                Future phone transport and callback adapter
@@ -55,7 +57,7 @@ The module directories contain briefs rather than fake implementations. Build on
 
 This is the standalone public source repository for the `hackathon-day/` application, with `main` as its initial branch. Preparation code and learning records remain in the parent Errand workspace. The existing controlled Errand demo repository remains a separate integration target.
 
-Reuse the existing OpenAI, GitHub, Vercel, Supabase, Twilio and other service setup as needed, including the existing GitHub App. Creating this source repository does not create or reconfigure any service or deployment.
+Reuse the existing OpenAI, GitHub, Vercel, Supabase, Twilio and other service setup as needed, including the existing GitHub App. The hackathon web project uses the existing Vercel account and GitHub connection. Existing MVP/demo deployments stay in place. The controlled demo sources stay under `mvp/` in the parent workspace; do not move them into this repository.
 
 ## Existing work and credits
 

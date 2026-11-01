@@ -2,11 +2,13 @@
 
 We are building two small demonstrations of the same Errand assistant. Start with [the README](README.md), then read [the plan](docs/PLAN.md) and [module boundaries](docs/ARCHITECTURE.md).
 
-## This first structure commit
+## Current web foundation
 
-Implemented: a local Node HTTP shell, `GET /`, `GET /healthz`, normal 404/405 responses, and syntax-check/start commands. Everything under the core, voice, integrations and demo directories is a planning brief. There are no provider clients, saved tasks, phone actions or working demos yet.
+Implemented: a small static web page, stylesheet and static health JSON; a local Node server for the same files; syntax-check/start commands; Vercel configuration for publishing `public/` after syntax checks. Everything under the core, voice, integrations and demo directories is still a planning brief. There are no provider clients, saved tasks, phone actions or working demos yet.
 
 `npm run check` and `npm run dev` require no credentials and do not load private dotenv files. The public README contains the full starting commands.
+
+The immediate priority is keeping this web foundation deployable and bringing over one useful MVP piece at a time. See [deployment](docs/DEPLOYMENT.md). The existing target/demo sources stay under MVP with their current connections.
 
 ## A suggested two-person split
 

@@ -1,6 +1,6 @@
 # One shared assistant, two scenarios
 
-This diagram is the target architecture. Only the local HTTP shell exists in this commit; module directories currently contain briefs.
+This diagram is the target architecture. The implemented foundation is a small static web page and local server; module directories currently contain briefs. Vercel publishes `public/` after the build check. No backend service runs in production yet.
 
 ```mermaid
 flowchart LR
@@ -19,7 +19,8 @@ flowchart LR
 
 | Location | Responsibility | Present now |
 | --- | --- | --- |
-| `src/app.js`, `src/server.js` | HTTP shell and local entry point; later receive reviewed routes | Overview, health, 404/405 responses |
+| `public/`, `vercel.json` | Minimal public web page and Git-driven deployment | Static HTML/CSS and honest static health JSON |
+| `src/app.js`, `src/server.js` | Local preview of the same allowlisted public files | Web page, stylesheet, health and 404/405 responses |
 | [core](../src/core/README.md) | General conversation/context, exact approvals, task/job contracts and background execution | Brief only |
 | [voice](../src/voice/README.md) | Incoming/outgoing phone transport, caller binding, proactive callback opening | Brief only |
 | [integrations](../src/integrations/README.md) | Bounded adapters for existing OpenAI, storage, phone, repository, error and deployment services | Brief only |
@@ -36,6 +37,6 @@ The shared worker chooses registered scenario tools. The scenario supplies capab
 
 ## Implementation boundary
 
-The shell uses Node built-ins so collaborators can run it immediately without credentials or dependency setup. This does not replace the established service architecture. Introduce reviewed dependencies only with the slice that needs them. The chosen deployment adapter, real provider clients, storage schema, scheduler and UI remain future work.
+The local server uses Node built-ins so collaborators can run it immediately without credentials or dependency setup. Production currently serves static files only. This does not replace the established service architecture. Introduce reviewed dependencies and backend deployment adapters only with the slice that needs them. Real provider clients, storage schema, scheduler and application interactions remain future work.
 
 All service credentials stay outside the agent-visible coding workspace and public repository. Reuse existing service setup; preserve caller/repository/action authorization. Local health is process evidence only.

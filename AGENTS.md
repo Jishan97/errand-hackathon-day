@@ -4,7 +4,9 @@
 
 Build Errand in this repository. The owner confirmed two demos: developer incident assistance as the main showcase, and everyday phone help/reminders for older adults. Use one shared conversation and execution core. The everyday scenario's details remain open for a later discussion.
 
-Read [the plan](docs/PLAN.md) and [architecture](docs/ARCHITECTURE.md) before changing behavior. The current milestone is an initial structure, not the whole product. Take subsequent implementation in small reviewable slices. Do not treat the full roadmap as an instruction to implement every feature at once.
+Read [the plan](docs/PLAN.md) and [architecture](docs/ARCHITECTURE.md) before changing behavior. The current milestone is a minimal live web page with a Vercel Git pipeline, followed by selective reuse of MVP work. Take subsequent implementation in small reviewable slices. Do not treat the full roadmap as an instruction to implement every feature at once.
+
+Keep existing demo applications under the parent workspace's `mvp/` directory, with their current GitHub/deployment links. Do not move or duplicate them here. The hackathon web deployment is separate from those existing deployments. Read [deployment guidance](docs/DEPLOYMENT.md) before changing its configuration.
 
 Retain the existing Node/JavaScript direction and reuse existing OpenAI, GitHub App, Vercel, Supabase, Twilio and other service setup. The existing controlled demo repository remains the integration target; this repository is Errand's source. Do not create replacement credentials, services or demo repositories as routine setup. Revalidate the relevant official API documentation when implementing an integration, and preserve the owner's chosen models.
 

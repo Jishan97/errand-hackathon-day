@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "npm run check",
+  "outputDirectory": "public",
+  "rewrites": [
+    { "source": "/healthz", "destination": "/health.json" }
+  ],
+  "headers": [
+    {
+      "source": "/healthz",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
+  ]
+}

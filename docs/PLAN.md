@@ -1,5 +1,11 @@
 # Two-demo delivery plan
 
+## Immediate next step — 1 November 2026
+
+The owner asked to reduce the immediate scope: get a minimal web page live with a Vercel pipeline, then slowly select useful work from MVP. The two-demo direction remains; the larger roadmap below is future work. Keep existing demos under MVP with their current GitHub/deployment links.
+
+This step adds only a small public page, credential-free local preview, static health output and Git-driven deployment. No voice, storage, coding worker or reminder integration is brought across yet. See [deployment and verification](DEPLOYMENT.md).
+
 ## Decision — 1 November 2026
 
 The owner confirmed two demonstrations. The developer demo receives most of the attention; the second serves older adults calling for everyday help or a reminder. Its exact scenario will be discussed later. Both use the same assistant and execution core.
@@ -41,6 +47,7 @@ Retain the established Node/JavaScript approach and existing OpenAI, Twilio, Sup
 | Slice | Concrete result | Status |
 | --- | --- | --- |
 | 0. Shared starting point | Collaborator brief, module layout and credential-free HTTP shell | Implemented in this scaffold |
+| 0a. Minimal web delivery | Small public page, Vercel build/check and main-branch deployments | Current step |
 | 1. Shared phone/task spine | Reuse reviewed voice, context, approval and durable-work boundaries from preparation | Planned |
 | 2. Developer investigation | One selected incident produces useful findings from real evidence | Planned; primary focus |
 | 3. Developer action and result | Scoped approval, actual coding/tests/PR, allowed delivery and replay-backed callback | Planned |
