@@ -16,7 +16,7 @@ The worker checks all four reviewed source hashes and the trusted GitHub workflo
 
 ## Verification
 
-307 offline application tests and syntax checks passed. The prepared parser suite failed before and passed after (9 tests). An isolated real PostgreSQL-compatible execution verified expiry/revision/claim/transition/role behavior. Live PR and heard-call acceptance are recorded separately after a real rehearsal.
+307 offline application tests and syntax checks passed. The prepared parser suite failed before and passed after (9 tests). An isolated real PostgreSQL-compatible execution verified expiry/revision/claim/transition/role behavior. Live rehearsal on 1 November at 16:33 London: the real signed alert opened draft PR #3 in the controlled demo repository, changing only parser and regression test. Its upload-regression check passed on `1498c7967e473ae3b7fd40e3a681a50d68d6bd62`. Twilio accepted the error-notification call. Heard-call confirmation remains pending. No merge or deployment occurred.
 
 ## Credits
 
