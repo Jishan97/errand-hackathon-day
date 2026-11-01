@@ -33,9 +33,16 @@ export function createAlertDemo({ rpc, github, caller }) {
       preparedRepair(await github.snapshot(baseSha));
       return call('arm', { p_base_sha: baseSha });
     },
-    async accept(event) {
+    async accept(event, capture = {}) {
       if (!receipt.test(event?.eventId ?? '') || !sha.test(event?.details?.baseSha ?? '') || event.details.fixture !== 'upload_lf_v1') throw Error('invalid_alert_event');
-      return call('accept', { p_receipt: event.eventId, p_base_sha: event.details.baseSha });
+      const fresh = receipt.test(capture.captureId ?? '') && typeof capture.occurredAt === 'string' && Number.isFinite(Date.parse(capture.occurredAt));
+      const id = fresh ? createHash('sha256').update(`${event.project}:${capture.captureId}:${event.details.baseSha}`).digest('hex').slice(0,32) : event.eventId;
+      const result = await call(fresh ? 'accept_capture' : 'accept', {
+        p_receipt: id, p_base_sha: event.details.baseSha, ...(fresh ? {p_occurred_at: capture.occurredAt} : {}),
+      });
+      // The public intake receipt remains issue/release bound; the internal
+      // recording job is independently deduplicated by the actual capture ID.
+      return { status: result.status, receiptId: event.eventId, jobReceiptId: id };
     },
     async status() {
       const result = await call('status', {});
@@ -50,13 +57,17 @@ export function createAlertDemo({ rpc, github, caller }) {
       if (!receipt.test(id ?? '')) throw Error('invalid_alert_event');
       const job = await call('claim', { p_receipt: id });
       if (job.status !== 'claimed') return job;
-      let phase = 'preparing', pr = null;
+      let phase = 'preparing', pr = prUrl.test(job.reusePr ?? '') ? {pullRequest: job.reusePr} : null;
       const record = (next, url = null) => call('record', { p_receipt: id, p_phase: next, p_pr: url });
       try {
         if (!sha.test(job.baseSha ?? '') || !/^[a-f0-9-]{36}$/.test(job.approvalId ?? '')) throw Error('invalid_alert_job');
         const files = preparedRepair(await github.snapshot(job.baseSha));
-        phase = 'opening_pr';
-        pr = await github.createPullRequest({ taskId: job.approvalId, baseSha: job.baseSha, files, prepared: true });
+        if (job.reusePr) {
+          pr = await github.verifyPreparedPullRequest({ pullRequest: job.reusePr, headSha: job.prHead, baseSha: job.baseSha, files });
+        } else {
+          phase = 'opening_pr';
+          pr = await github.createPullRequest({ taskId: job.approvalId, baseSha: job.baseSha, files, prepared: true });
+        }
         if (!prUrl.test(pr?.pullRequest ?? '')) throw Error('incident_pr_unconfirmed');
         await record('calling', pr.pullRequest);
         phase = 'calling';

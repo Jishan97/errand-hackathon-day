@@ -331,3 +331,20 @@ test("remote API failure remains fixed and does not read or echo provider error 
   await assert.rejects(api.snapshot(baseSha), { message: "incident_github_request_unconfirmed" });
   assert.equal(read, 0); assert.equal(canceled, 1);
 });
+
+
+test('prepared recording PR verification is read-only and checks current draft and exact file bytes',async()=>{
+ const args={...descriptor(),files};
+ const valid={"GET /pulls/7":()=>({...pull(),draft:true})};
+ const f=fixture({overrides:valid});
+ assert.equal((await f.api.verifyPreparedPullRequest(args)).pullRequest,args.pullRequest);
+ assert.deepEqual(f.writes(),[]);
+ for(const current of [{...pull(),draft:true,state:'closed'},{...pull(),draft:false},{...pull(),draft:true,head:{...pull().head,sha:mergeSha}}]){
+  const bad=fixture({overrides:{"GET /pulls/7":()=>current}});
+  await assert.rejects(bad.api.verifyPreparedPullRequest(args),/incident_pr_changed/);
+  assert.deepEqual(bad.writes(),[]);
+ }
+ const bad=fixture({overrides:{...valid,[`GET /contents/${files[0].path}?ref=${headSha}`]:()=>({encoding:'base64',content:Buffer.from('changed').toString('base64')})}});
+ await assert.rejects(bad.api.verifyPreparedPullRequest(args),/incident_patch_changed/);
+ assert.deepEqual(bad.writes(),[]);
+});

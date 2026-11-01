@@ -120,7 +120,7 @@ export function createErrorAlertCaller(options) {
     /^https:\/\/github\.com\/Jishan97\/errand-agent-demo\/pull\/[1-9]\d*$/.test(evidence?.pullRequest ?? '');
   const message = '<?xml version="1.0" encoding="UTF-8"?><Response><Say>' +
     'This is Errand, an AI assistant. Sentry reported that the Common Ground sample attachment failed. ' +
-    'I opened a draft pull request with the prepared line ending fix and regression tests. ' +
+    'A draft pull request with the prepared line ending fix and regression tests is ready for review. ' +
     'Please review it on GitHub. The fix has not been merged or deployed. Goodbye.' +
     '</Say><Hangup/></Response>';
   return createCaller(options, verify, message);

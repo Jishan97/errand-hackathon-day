@@ -9,13 +9,13 @@ export default {
         webhookSecret: process.env.SENTRY_WEBHOOK_SECRET,
         projectId: process.env.SENTRY_PROJECT_ID,
       }),
-      async onVerified(receipt, event) {
+      async onVerified(receipt, event, capture) {
         console.info(JSON.stringify({ event: 'sentry_alert_verified', ...receipt }));
         if (process.env.ENABLE_FAST_INCIDENT_DEMO !== 'true') return;
         const runtime = createIncidentRuntime(runtimeValues(process.env));
-        const alert = await runtime.alertDemo.accept(event);
+        const alert = await runtime.alertDemo.accept(event, capture);
         if (['queued', 'duplicate'].includes(alert.status)) {
-          if (alert.status === 'queued') waitUntil(runtime.alertDemo.run(event.eventId).catch(() => {
+          if (alert.status === 'queued') waitUntil(runtime.alertDemo.run(alert.jobReceiptId).catch(() => {
             console.info(JSON.stringify({ event: 'alert_demo_requires_review' }));
           }));
           return alert;

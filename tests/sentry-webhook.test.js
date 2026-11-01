@@ -225,3 +225,16 @@ test('signed delivery passes normalized evidence to durable intake and returns o
   const wrong = await handleSentryWebhook(request(), options(() => ({ status: 'queued', receiptId: 'f'.repeat(32) })));
   assert.equal(wrong.status, 503);
 });
+
+
+test('only signed capture metadata reaches recording intake and acknowledgement stays issue-bound',async()=>{
+ for(const metadata of [{event_id:'e'.repeat(32),datetime:'2026-11-01T16:40:00Z'},{event_id:'bad',datetime:'bad'},{}]){
+  let captured;
+  const result=await handleSentryWebhook(request({payload:event(metadata)}),options((receipt,normalized,capture)=>{
+   captured=capture; return {status:'queued',receiptId:normalized.eventId,jobReceiptId:'f'.repeat(32)};
+  }));
+  assert.equal(result.status,200);
+  assert.deepEqual(captured,metadata.event_id==='e'.repeat(32)?{captureId:'e'.repeat(32),occurredAt:'2026-11-01T16:40:00.000Z'}:{captureId:null,occurredAt:null});
+  assert.equal((await result.json()).processing,'queued');
+ }
+});

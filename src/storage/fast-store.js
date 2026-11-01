@@ -6,7 +6,7 @@ const shaPattern = /^[a-f0-9]{40}$/;
 const uuidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 const phases = new Set(['repair_start', 'repair_poll', 'cleanup', 'create_pr', 'ci_wait', 'merge', 'deployment_wait', 'callback', 'completed', 'failed', 'unknown']);
 const terminal = new Set(['completed', 'failed', 'unknown']);
-const names = new Set(['errand_alert_arm', 'errand_alert_accept', 'errand_alert_claim', 'errand_alert_record', 'errand_alert_status', 'errand_fast_arm', 'errand_fast_accept', 'errand_fast_claim', 'errand_fast_advance', 'errand_fast_status']);
+const names = new Set(['errand_alert_accept_capture', 'errand_alert_arm', 'errand_alert_accept', 'errand_alert_claim', 'errand_alert_record', 'errand_alert_status', 'errand_fast_arm', 'errand_fast_accept', 'errand_fast_claim', 'errand_fast_advance', 'errand_fast_status']);
 const forbidden = /token|secret|password|authorization|cookie|privatekey|credential/i;
 const fail = (code = 'fast_storage_invalid') => { throw new Error(code); };
 const string = (value, pattern) => { if (typeof value !== 'string' || !pattern.test(value)) fail(); return value; };

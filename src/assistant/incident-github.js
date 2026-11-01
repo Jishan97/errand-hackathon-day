@@ -90,6 +90,21 @@ export function createIncidentGithub({ config, credential = null, fetcher = fetc
       return { number: pr.number, headSha: fix.sha, baseSha, branch, pullRequest: pr.html_url,
         patchHashes: Object.fromEntries(files.map((f) => [f.path, hash(f.content)])) };
     },
+    async verifyPreparedPullRequest({ pullRequest, headSha, baseSha, files }) {
+      await verifyBase(baseSha);
+      const prefix = `https://github.com/${repo}/pull/`;
+      const number = typeof pullRequest === 'string' && pullRequest.startsWith(prefix) ? Number(pullRequest.slice(prefix.length)) : NaN;
+      if (!Number.isSafeInteger(number) || number < 1 || !sha(headSha)) throw Error('incident_pr_changed');
+      const current = await api(`/pulls/${number}`);
+      if (current.state !== 'open' || current.merged || !current.draft || current.head?.sha !== headSha || current.base?.sha !== baseSha ||
+        current.base?.ref !== 'main' || current.head?.repo?.full_name?.toLowerCase() !== repo.toLowerCase() ||
+        current.base?.repo?.full_name?.toLowerCase() !== repo.toLowerCase()) throw Error('incident_pr_changed');
+      const changed = await api(`/pulls/${number}/files?per_page=10`);
+      if (!Array.isArray(changed) || changed.length !== 2 || new Set(changed.map(f => f.filename)).size !== 2 ||
+        changed.some(f => !files.some(source => source.path === f.filename))) throw Error('incident_patch_changed');
+      for (const file of files) if (await content(file.path, headSha) !== file.content) throw Error('incident_patch_changed');
+      return {pullRequest, headSha, baseSha, number};
+    },
     async checks(pr) {
       if (!Number.isSafeInteger(pr?.number) || !sha(pr.headSha) || !sha(pr.baseSha)) throw Error("incident_pr_required");
       await verifyBase(pr.baseSha);

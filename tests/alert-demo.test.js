@@ -15,17 +15,18 @@ test('prepared patch binds all reviewed source bytes and returns only parser/tes
     assert.throws(() => preparedRepair(changed), /prepared_source_changed/);
   }
 });
-function fixture({failure} = {}) {
+function fixture({failure, reuse=false} = {}) {
   let claimed = false;
   const calls = [];
   const rpc = async (name, params) => {
     calls.push([name, params]);
-    if (name.endsWith('claim')) { if (claimed) return {status:'not_claimed'}; claimed=true; return {status:'claimed',baseSha,approvalId:'11111111-1111-4111-8111-111111111111'}; }
+    if (name.endsWith('claim')) { if (claimed) return {status:'not_claimed'}; claimed=true; return {status:'claimed',baseSha,approvalId:'11111111-1111-4111-8111-111111111111', ...(reuse?{reusePr:url,prHead:'d'.repeat(40)}:{})}; }
     return {status:'recorded'};
   };
   const github = { snapshot: async () => snapshot, createPullRequest: async input => {
     calls.push(['pr',input]); if(failure==='pr') throw Error('private provider text'); return {pullRequest:url};
   } };
+  github.verifyPreparedPullRequest=async input=>{calls.push(['verify-pr',input]); if(failure==='verify') throw Error('changed PR'); return {pullRequest:url};};
   const caller = {call: async evidence => {calls.push(['call',evidence]); if(failure==='call') throw Error('private provider text'); return {status:'submitted_not_verified'};}};
   return {demo:createAlertDemo({rpc,github,caller}),calls,github};
 }
@@ -74,4 +75,27 @@ test('operator authentication and explicit narrow scope protect alert arming',as
   assert.equal(calls,0);
   assert.equal((await handleOperator(request(token,ALERT_SCOPE),options)).status,200);
   assert.equal(calls,1);
+});
+
+
+test('recording capture IDs distinguish clicks while preserving retry and public receipt binding', async()=>{
+ const calls=[];
+ const demo=createAlertDemo({rpc:async(name,params)=>{calls.push([name,params]); return {status:'queued'};}});
+ const event={eventId:receipt,project:'123',details:{baseSha,fixture:'upload_lf_v1'}};
+ const capture={captureId:'e'.repeat(32),occurredAt:'2026-11-01T16:40:00.000Z'};
+ const first=await demo.accept(event,capture),retry=await demo.accept(event,capture);
+ const second=await demo.accept(event,{...capture,captureId:'f'.repeat(32)});
+ assert.equal(first.receiptId,receipt); assert.equal(first.jobReceiptId,retry.jobReceiptId);
+ assert.notEqual(first.jobReceiptId,second.jobReceiptId);
+ assert.equal(calls[0][0],'errand_alert_accept_capture');
+ const legacy=await demo.accept(event); assert.equal(legacy.receiptId,receipt);
+ assert.equal(calls.at(-1)[0],'errand_alert_accept');
+});
+test('recording take verifies the existing PR and calls once without creating another PR', async()=>{
+ const f=fixture({reuse:true}); assert.equal((await f.demo.run(receipt)).status,'completed');
+ assert.deepEqual(f.calls.filter(c=>['pr','verify-pr','call'].includes(c[0])).map(c=>c[0]),['verify-pr','call']);
+ await f.demo.run(receipt); assert.equal(f.calls.filter(c=>c[0]==='call').length,1);
+ const changed=fixture({reuse:true,failure:'verify'});
+ assert.equal((await changed.demo.run(receipt)).status,'failed');
+ assert.equal(changed.calls.some(c=>['pr','call'].includes(c[0])),false);
 });

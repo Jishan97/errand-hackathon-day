@@ -99,7 +99,14 @@ export async function handleSentryWebhook(request, { getConfig = () => ({}), onV
     if (!event) return reply(202, { status: 'ignored' });
 
     const receipt = { status: 'verified', receiptId: event.eventId, processing: 'not_connected' };
-    const accepted = await onVerified(receipt, event);
+    // These fields come from the same HMAC-verified body. A fresh captured
+    // event can support an explicitly bounded recording take; retries retain
+    // its event_id and cannot create another call.
+    const captured = JSON.parse(body.toString('utf8')).data.event;
+    const captureId = /^[a-f0-9]{32}$/.test(captured.event_id ?? '') ? captured.event_id : null;
+    const time = typeof captured.datetime === 'string' ? Date.parse(captured.datetime) : NaN;
+    const occurredAt = Number.isFinite(time) ? new Date(time).toISOString() : null;
+    const accepted = await onVerified(receipt, event, { captureId, occurredAt });
     if (accepted) {
       if (!['queued', 'duplicate', 'unarmed'].includes(accepted.status) || accepted.receiptId !== event.eventId) {
         throw Error('invalid_intake_receipt');
