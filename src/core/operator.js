@@ -6,6 +6,8 @@ const receipt = /^[a-f0-9]{32}$/;
 const hash = (v) => createHash('sha256').update(v).digest();
 const response = (status, body) => Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 const safeErrors = new Set(['incident_disabled', 'incident_unconfigured', 'fast_storage_unconfigured',
+  'incident_github_disabled', 'incident_github_unconfigured', 'incident_callback_disabled',
+  'incident_callback_unconfigured', 'incident_model_unconfigured', 'incident_openai_unconfigured',
   'fast_storage_request_unconfirmed', 'github_app_permissions_required', 'github_app_not_connected',
   'github_connection_unverified', 'incident_base_changed', 'incident_ci_definition_changed']);
 
