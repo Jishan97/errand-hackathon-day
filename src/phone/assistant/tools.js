@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 
-export const operations = Object.freeze(["schedule_callback", "reschedule_callback", "cancel_task", "complete_task", "save_note", "developer_check", "developer_recover", "incident_fix"]);
+export const operations = Object.freeze(["schedule_callback", "reschedule_callback", "cancel_task", "complete_task", "save_note", "developer_check", "developer_recover", "incident_fix", "generate_image"]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isId = (id) => typeof id === "string" && uuid.test(id);
 export const text = (value, max = 240) => typeof value === "string" && value.trim().length > 0 && value.length <= max && !/[\u0000-\u001f\u007f]/u.test(value);
 
-export function validateAction(operation, input, { now = Date.now(), developerEnabled = false, incidentEnabled = false } = {}) {
+export function validateAction(operation, input, { now = Date.now(), developerEnabled = false, incidentEnabled = false, imageEnabled = false } = {}) {
   if (!operations.includes(operation) || !input || typeof input !== "object" || Array.isArray(input)) throw new Error("invalid_action");
   const allowed = ["taskId", "revision", "title", "dueAt"];
   if (Object.keys(input).some((key) => !allowed.includes(key))) throw new Error("invalid_action_arguments");
@@ -20,18 +20,20 @@ export function validateAction(operation, input, { now = Date.now(), developerEn
     if (!Number.isFinite(due) || due < now + 10_000 || due > now + 30 * 86400_000) throw new Error("callback_time_out_of_range");
     args.dueAt = new Date(due).toISOString();
   } else if (input.dueAt != null) throw new Error("unexpected_callback_time");
-  if (["schedule_callback", "reschedule_callback", "save_note"].includes(operation)) {
+  if (["schedule_callback", "reschedule_callback", "save_note", "generate_image"].includes(operation)) {
     if (!text(input.title, 160)) throw new Error("action_title_required");
     args.title = input.title.trim();
   } else if (input.title != null) throw new Error("unexpected_action_title");
   if (operation.startsWith("developer_") && !developerEnabled) throw new Error("developer_tools_unavailable");
   if (operation === "incident_fix" && !incidentEnabled) throw new Error("incident_tools_unavailable");
+  if (operation === 'generate_image' && !imageEnabled) throw new Error('image_tools_unavailable');
   return Object.freeze(args);
 }
 
 export function describeAction(operation, args, { timeZone = "Europe/London", repository = null } = {}) {
   const when = args.dueAt ? new Intl.DateTimeFormat("en-GB", { timeZone, dateStyle: "medium", timeStyle: "short", hour12: true }).format(new Date(args.dueAt)) : null;
   const descriptions = {
+    generate_image: `Generate one picture of: ${args.title}. Show it on the operator's demo web screen.`,
     schedule_callback: `Call you on ${when} (${timeZone}) about: ${args.title}.`,
     reschedule_callback: `Move that callback to ${when} (${timeZone}) about: ${args.title}.`,
     cancel_task: "Cancel that task and its queued work.",

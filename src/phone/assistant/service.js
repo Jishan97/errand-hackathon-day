@@ -3,13 +3,14 @@ import { planAssistantTurn } from "../agents/assistant-turn.js";
 import { assessActionConfirmation } from "../agents/repair-proposal.js";
 import { actionHash, describeAction, validateAction, isId } from "./tools.js";
 
-export function createAssistantService({ config, repository, developer = null, incidents = null, planner = planAssistantTurn, assessor = assessActionConfirmation }) {
+export function createAssistantService({ config, repository, developer = null, incidents = null, images = null, planner = planAssistantTurn, assessor = assessActionConfirmation }) {
   return Object.freeze({
     async context(callSid) {
       const context = await (incidents ? incidents.context(callSid) : repository.context(callSid));
       if (!context.profile || !Array.isArray(context.tasks) || context.tasks.length > 16) throw new Error("invalid_assistant_context");
       const developerAvailable = developer?.enabled && (typeof developer.isAvailable === "function" ? await Promise.resolve().then(() => developer.isAvailable()).catch(() => false) : true);
       return { ...context, capabilities: ["schedule_callback", "reschedule_callback", "cancel_task", "complete_task", "save_note",
+        ...(images?.enabled ? ['generate_image'] : []),
         ...(developerAvailable ? ["developer_check", "developer_recover"] : []),
         ...(incidents && developerAvailable && context.tasks.some((task) => task.incident?.phase === "awaiting_approval") ? ["incident_fix"] : [])],
       developerRepository: developerAvailable ? developer.repository : null };
@@ -20,7 +21,7 @@ export function createAssistantService({ config, repository, developer = null, i
         pending: pending ? { operation: pending.operation, summary: pending.summary } : null, signal });
       if (signal?.aborted || !isCurrent()) throw new Error("assistant_turn_superseded");
       if (plan.kind !== "propose") return { ...plan, context };
-      const args = validateAction(plan.operation, plan.args, { developerEnabled: context.capabilities.includes("developer_check"), incidentEnabled: context.capabilities.includes("incident_fix") });
+      const args = validateAction(plan.operation, plan.args, { developerEnabled: context.capabilities.includes("developer_check"), incidentEnabled: context.capabilities.includes("incident_fix"), imageEnabled: context.capabilities.includes('generate_image') });
       if (args.taskId && !context.tasks.some((task) => task.id === args.taskId && task.revision === args.revision)) throw new Error("stale_task_selection");
       const incidentTarget = args.taskId ? context.tasks.find((task) => task.id === args.taskId)?.incident : null;
       if (incidentTarget && plan.operation !== "incident_fix") return { kind: "reply", context,
@@ -36,7 +37,9 @@ export function createAssistantService({ config, repository, developer = null, i
       const summary = describeAction(plan.operation, args, { timeZone: context.profile.timeZone, repository: developer?.repository });
       const hash = actionHash(plan.operation, effectiveArgs, summary);
       const nonce = randomUUID();
-      const staged = plan.operation === "incident_fix"
+      const staged = plan.operation === 'generate_image'
+        ? await images.stage({ callSid, args: effectiveArgs, summary, hash, nonce })
+        : plan.operation === "incident_fix"
         ? await incidents.stage({ callSid, taskId: args.taskId, revision: args.revision, summary, hash, nonce, sourceEventIds: plan.sourceEventIds })
         : await repository.stage({ callSid, operation: plan.operation, args: effectiveArgs, summary, hash, nonce, sourceEventIds: plan.sourceEventIds });
       if (!isId(staged.id) || staged.hash !== hash || staged.nonce !== nonce || staged.summary !== summary) throw new Error("proposal_binding_failed");
@@ -55,13 +58,13 @@ export function createAssistantService({ config, repository, developer = null, i
       if (!ready) return { status: "not_ready" };
       // Consume the exact issued snapshot immediately before the atomic commit.
       if (!isCurrent(true)) return { status: "stale" };
-      const store = proposal.operation === "incident_fix" ? incidents : repository;
+      const store = proposal.operation === 'generate_image' ? images : proposal.operation === "incident_fix" ? incidents : repository;
       if (!store) throw Error("incident_tools_unavailable");
       const result = await store.confirm({ callSid, proposal, sourceEventIds: assessment.sourceEventIds });
       if (!["confirmed", "already_confirmed"].includes(result.status) || !isId(result.taskId)) throw new Error("confirmation_outcome_unknown");
       return { status: "confirmed", taskId: result.taskId, taskStatus: result.taskStatus };
     },
-    decline: (callSid, proposalId, operation = null) => operation === "incident_fix" ? incidents.decline(callSid, proposalId) : repository.decline(callSid, proposalId),
+    decline: (callSid, proposalId, operation = null) => operation === 'generate_image' ? images.decline(callSid, proposalId) : operation === "incident_fix" ? incidents.decline(callSid, proposalId) : repository.decline(callSid, proposalId),
     status: () => repository.status(),
     async developerStatus() {
       const enabled = Boolean(developer?.enabled && (typeof developer.isAvailable === "function" ? await Promise.resolve().then(() => developer.isAvailable()).catch(() => false) : true));

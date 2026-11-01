@@ -19,6 +19,7 @@ const m1ConfigurationNames = Object.freeze([
 const configurationNames = [
   ...new Set(Object.values(configurationGroups).flat()),
   "OPENAI_VOICE_MODEL",
+  "OPENAI_IMAGE_MODEL", "ENABLE_PHONE_IMAGES",
   "ENABLE_LIVE_VOICE",
   "ENABLE_M1_INTAKE",
   "ENABLE_SHARED_ASSISTANT", "GITHUB_DEMO_REPO", "GITHUB_DEMO_TOKEN", "GITHUB_DEMO_URL",
@@ -35,7 +36,7 @@ export class ConfigurationError extends Error {
   }
 }
 
-const phoneNames = new Set([...configurationGroups.voice, ...configurationGroups.worker,
+const phoneNames = new Set(["OPENAI_IMAGE_MODEL", "ENABLE_PHONE_IMAGES", ...configurationGroups.voice, ...configurationGroups.worker,
   ...m1ConfigurationNames, "OPENAI_VOICE_MODEL", "ENABLE_LIVE_VOICE", "ENABLE_M1_INTAKE", "ENABLE_SHARED_ASSISTANT", "PORT"]);
 
 export function loadConfig(environment = process.env) {

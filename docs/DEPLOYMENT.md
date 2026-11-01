@@ -1,5 +1,7 @@
 # Deployment and verification
 
+Image-demo branch also deploys `api/images/generate.js`. Reuse server-only `OPENAI_API_KEY` and `OPERATOR_TOKEN`; optional `OPENAI_IMAGE_MODEL` selects the image model. Configure Preview scope when testing a branch. See [image setup and acceptance](IMAGE_DEMO.md). The local preview does not load these values.
+
 Source is the public [errand-hackathon-day](https://github.com/Jishan97/errand-hackathon-day) repository, production branch main. Vercel publishes [errand-hackathon-day.vercel.app](https://errand-hackathon-day.vercel.app) through its existing Git connection. Generated/scoped aliases may require authentication; use the short public URL.
 
 The repository root is this standalone repository, not a nested hackathon-day path. The Other preset installs the pinned lockfile with npm ci --ignore-scripts, runs syntax checks and all offline JavaScript tests, and publishes public/ plus the two API entry points. Node.js is 24.x. Functions have a 300-second limit; the incident driver stops starting new steps after 220 seconds and persists work for explicit resume. There is no new scheduler.

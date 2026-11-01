@@ -11,6 +11,8 @@ import { createIdentityRepository } from "./storage/identity-repository.js";
 import { createAssistantRepository } from "./storage/assistant-repository.js";
 import { createAssistantService } from "./assistant/service.js";
 import { createAssistantWorker } from "./assistant/worker.js";
+import { waitUntil } from '@vercel/functions';
+import { createImageStore, createPhoneImages } from '../images/phone.js';
 
 function rejectUpgrade(socket, status, code) {
   const reason = { 401: "Unauthorized", 403: "Forbidden", 404: "Not Found", 503: "Service Unavailable" }[status];
@@ -36,7 +38,12 @@ export function createRuntime({ config = loadConfig(), logger = (entry) => conso
       const rpc = m1Options.rpc ?? createServerRpcClient({ supabaseUrl: config.values.SUPABASE_URL, secretKey: config.values.SUPABASE_SECRET_KEY });
       const repository = m1Options.repository ?? createIdentityRepository({ rpc });
       const assistantRepository = m1Options.assistantRepository ?? createAssistantRepository({ rpc, callbacksOnly: true });
-      assistant = createAssistantService({ config, repository: assistantRepository, planner: m1Options.planner, assessor: m1Options.actionAssessor });
+      const images = config.values.ENABLE_PHONE_IMAGES === 'true' ? createPhoneImages({
+        store: m1Options.imageStore ?? createImageStore({ url: config.values.SUPABASE_URL, secret: config.values.SUPABASE_SECRET_KEY }),
+        apiKey: config.values.OPENAI_API_KEY, model: config.values.OPENAI_IMAGE_MODEL || undefined,
+        schedule: m1Options.imageSchedule ?? waitUntil, generate: m1Options.imageGenerate,
+      }) : null;
+      assistant = createAssistantService({ config, repository: assistantRepository, images, planner: m1Options.planner, assessor: m1Options.actionAssessor });
       assistantWorker = createAssistantWorker({ config, repository: assistantRepository, logger, placeCall: m1Options.placeCall });
       m1 = createM1VoiceController({ config, repository, assistant });
     }

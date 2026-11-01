@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Describe something you imagine. Errand turns your words into a picture.">
+  <meta name="referrer" content="no-referrer"><meta name="theme-color" content="#183e34">
+  <title>Make a little magic · Errand</title>
+  <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/image.css">
+  <script type="module" src="/image.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="page">
+    <header class="header"><a class="wordmark" href="/" aria-label="Errand home"><span class="mark" aria-hidden="true">e</span>errand<span class="wordmark-dot">.</span></a><span class="build-label"><span class="dot" aria-hidden="true"></span>A little imagination</span></header>
+    <main id="main">
+      <section class="image-intro"><p class="eyebrow">YOUR WORDS. A LITTLE WONDER.</p><h1>What can we<br>make for you?</h1><p class="intro">A birthday wish. An impossible animal. A picture to make someone smile. Just describe it.</p></section>
+      <section class="phone-screen" aria-label="Phone demo screen"><div><strong>Say it on the phone. See it here.</strong><p>Connect this screen, then call Errand and describe your picture.</p></div><button class="button" id="watch" type="button">Watch phone requests <span aria-hidden="true">↗</span></button></section>
+      <div class="studio">
+        <section class="request-panel" aria-labelledby="request-title">
+          <h2 id="request-title">Or try an idea here.</h2>
+          <form id="image-form">
+            <label for="prompt">Describe your picture</label>
+            <textarea id="prompt" name="prompt" rows="5" maxlength="2000" required placeholder="A birthday card for my granddaughter, with cats, balloons and the words ‘Happy Birthday!’"></textarea>
+            <div class="examples" aria-label="Ideas to try"><button type="button" data-example="A joyful birthday card with cats, pastel balloons and the words Happy Birthday! Charming watercolor illustration.">A birthday card</button><button type="button" data-example="A tiny friendly dragon riding a bicycle through an English village, whimsical storybook illustration.">Something impossible</button><button type="button" data-example="A peaceful cottage garden with sunflowers, a robin and a little green bench, warm watercolor painting.">A peaceful place</button></div>
+            <details id="access"><summary>Demo access</summary><label for="operator">Operator access token</label><input id="operator" type="password" autocomplete="off" spellcheck="false" placeholder="Enter privately to enable generation"><p>Provided by your demo host. Kept in this tab only.</p></details>
+            <button class="button generate" id="generate" type="submit">Make my picture <span aria-hidden="true">↗</span></button>
+            <p class="request-note">One picture at a time. A little patience goes a long way.</p>
+          </form>
+        </section>
+        <section class="result-panel" id="result-panel" aria-labelledby="result-title" aria-busy="false">
+          <div class="result-top"><h2 id="result-title">Your picture</h2><span id="result-label">A blank canvas</span></div>
+          <div class="canvas" id="canvas">
+            <div id="empty"><div class="imagination" aria-hidden="true"><span>✳</span><i></i><b>✧</b></div><p>A little space for<br>something wonderful.</p><span>Your finished picture will appear here.</span></div>
+            <div id="loading" hidden><div class="spinner" aria-hidden="true"></div><p>Bringing your idea to life…</p><span>This can take a minute or two.</span></div>
+            <img id="picture" alt="" hidden>
+          </div>
+          <div class="result-bottom"><p id="caption">Made from your imagination, with a little help from AI.</p><a id="download" class="button" hidden download="errand-image.jpg">Download picture <span aria-hidden="true">↓</span></a></div>
+        </section>
+      </div>
+      <div id="notice" class="notice" role="status" aria-live="polite" aria-atomic="true"></div>
+      <p class="phone-note">Phone requests need the demo phone service enabled. This screen shows the most recent approved phone picture; keep it open while your picture is being made.</p>
+    </main>
+    <footer><span>Errand · A little help, one call away.</span><a href="/">Back to Errand <span aria-hidden="true">↗</span></a></footer>
+  </div>
+</body>
+</html>

@@ -151,6 +151,7 @@ export function createAssistantConversation({ service, callSid, binding, comment
             const savedOperation = pending.operation;
             pending = null; gate = null; readback = null;
             const resultText = {
+              generate_image: "Your picture request is accepted and generation is starting. It will appear on the demo web screen when ready. It is not ready yet.",
               save_note: "The note is saved.",
               cancel_task: "The task is cancelled and its queued work is stopped.",
               complete_task: "The task is marked done.",

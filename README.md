@@ -1,5 +1,7 @@
 # Errand — Hackathon Day
 
+Image-demo branch: caller describes a picture by phone → confirms the readback → generated picture appears on `/image.html` → download. The operator connects the screen with the existing token; a text prompt is also available for rehearsal. See [setup, the one-table migration and live acceptance](docs/IMAGE_DEMO.md). It reuses OpenAI/Supabase/phone settings and needs no Composio or Gmail. Local preview has no live credentials; live acceptance is pending.
+
 Errand is a phone-based assistant that carries out approved work between calls and calls back with a verified result.
 
 Built for the [DevDay Exchange London Community Hackathon](https://luma.com/dde-ldn-hack) on Sunday, 1 November 2026.

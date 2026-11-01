@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { Readable } from 'node:stream';
 import { handleSentryWebhook } from './integrations/sentry-webhook.js';
 import { handleOperator } from './core/operator.js';
+import { handleImageGeneration } from './images/generate.js';
+import { handleImageDisplay } from './images/display.js';
 
 // Explicit public-file allowlist; no private configuration or providers are loaded.
 const home = readFileSync(new URL('../public/index.html', import.meta.url));
@@ -18,8 +20,11 @@ const pages = new Map([
 for (const [name, type] of [['incident.html', 'text/html'], ['incident.css', 'text/css'], ['incident.js', 'text/javascript']]) {
   pages.set(`/${name}`, { type: `${type}; charset=utf-8`, body: readFileSync(new URL(`../public/${name}`, import.meta.url)) });
 }
+for (const [name, type] of [['image.html', 'text/html'], ['image.css', 'text/css'], ['image.js', 'text/javascript']]) {
+  pages.set(`/${name}`, { type: `${type}; charset=utf-8`, body: readFileSync(new URL(`../public/${name}`, import.meta.url)) });
+}
 
-export function createApp({ sentryOptions, operatorOptions } = {}) {
+export function createApp({ sentryOptions, operatorOptions, imageOptions } = {}) {
   return createServer(async (request, response) => {
     response.setHeader('Content-Type', 'application/json; charset=utf-8');
     response.setHeader('Cache-Control', 'no-store');
@@ -34,11 +39,13 @@ export function createApp({ sentryOptions, operatorOptions } = {}) {
       response.end(JSON.stringify({ error: 'invalid_url' }));
       return;
     }
-    if (pathname === '/api/webhooks/sentry' || pathname.startsWith('/api/incident/')) {
+    if (pathname === '/api/webhooks/sentry' || pathname.startsWith('/api/incident/') || ['/api/images/generate', '/api/images/latest', '/api/images/result'].includes(pathname)) {
       try {
         const incoming = new Request(url, { method: request.method, headers: request.headers,
           ...(!['GET', 'HEAD'].includes(request.method) ? { body: Readable.toWeb(request), duplex: 'half' } : {}) });
-        const result = pathname === '/api/webhooks/sentry' ? await handleSentryWebhook(incoming, sentryOptions)
+        const result = pathname === '/api/images/generate' ? await handleImageGeneration(incoming, imageOptions)
+          : pathname.startsWith('/api/images/') ? await handleImageDisplay(incoming, imageOptions)
+          : pathname === '/api/webhooks/sentry' ? await handleSentryWebhook(incoming, sentryOptions)
           : await handleOperator(incoming, operatorOptions ?? {
             getToken: () => undefined, getRuntime: () => { throw Error('local_provider_disabled'); }, schedule: () => {},
           });

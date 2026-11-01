@@ -1,5 +1,7 @@
 # One shared assistant, two scenarios
 
+The isolated image branch adds phone `generate_image` routing through the existing spoken-confirmation gate, one-use Supabase image claims/results, protected polling/display at `/image.html`, and direct text-prompt fallback via `POST /api/images/generate`. See [image setup and boundaries](IMAGE_DEMO.md). Rendering uses the Images API; shared planning stays on the existing Agents API. Live acceptance remains pending.
+
 > **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
 
 This diagram is the target architecture. The implemented foundation is a small static web page/local server plus one validation-only signed Sentry receiver. Vercel publishes `public/` and the API function after syntax/tests pass. The larger conversation, storage and execution flow remains planned.

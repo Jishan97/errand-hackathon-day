@@ -1,5 +1,7 @@
 # Two-demo delivery plan
 
+Image demo pivot (isolated branch): the owner selected phone-described image → spoken approval → web display/download as the smaller everyday demo. See [IMAGE_DEMO.md](IMAGE_DEMO.md). Phone routing, image generation and the protected web screen are implemented; owner activation/migration and live acceptance remain pending. Gmail work stays in its existing branch.
+
 > **Current build — 1 November 2026:** The owner has authorized the controlled repair and completion-call flow. See [FAST_INCIDENT.md](FAST_INCIDENT.md) for the implemented path, owner activation and live acceptance checkpoints. Earlier validation-only/static descriptions below are historical. The receiver still returns `not_connected` when the new feature switch is off.
 
 ## Immediate next step — 1 November 2026

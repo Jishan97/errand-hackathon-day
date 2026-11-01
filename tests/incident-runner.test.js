@@ -83,7 +83,7 @@ async function executeOracle(h, directory, phase) {
   const command = commandFrom(h.state.body, phase);
   const encoded = command.slice("node --input-type=module -e ".length);
   assert.equal(encoded[0], "'"); assert.equal(encoded.at(-1), "'");
-  const program = encoded.slice(1, -1).replaceAll(`'"'"'`, "'").replaceAll("/workspace", directory);
+  const program = encoded.slice(1, -1).replaceAll(`'"'"'`, "'").replaceAll("/workspace", directory.replaceAll('\\', '/'));
   const result = spawnSync(process.execPath, ["--input-type=module", "-e", program], { env: {}, encoding: "utf8", timeout: 15000, maxBuffer: 65536 });
   assert.equal(result.error, undefined);
   assert.equal(result.status, phase === "before" ? 1 : 0, result.stderr);
@@ -271,7 +271,7 @@ test("trusted verifier detects immutable repository edits rather than approving 
   await writeFile(join(directory, "tests/upload-parser.test.js"), regressionTest);
   await writeFile(join(directory, "api/upload.js"), "changed API outside patch scope");
   const command = commandFrom(h.state.body, "before");
-  const program = command.slice("node --input-type=module -e ".length + 1, -1).replaceAll(`'"'"'`, "'").replaceAll("/workspace", directory);
+  const program = command.slice("node --input-type=module -e ".length + 1, -1).replaceAll(`'"'"'`, "'").replaceAll("/workspace", directory.replaceAll('\\', '/'));
   const result = spawnSync(process.execPath, ["--input-type=module", "-e", program], { env: {}, encoding: "utf8", timeout: 15000 });
   assert.equal(result.status, 2);
   const proof = JSON.parse(await readFile(join(directory, "outputs", "before.json")));
